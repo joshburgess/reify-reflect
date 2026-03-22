@@ -1,0 +1,50 @@
+[workspace]
+members = [
+    "reflect-core",
+    "reflect-nat",
+    "reflect-derive",
+    "reify-graph",
+    "context-trait",
+    "async-reify",
+    "const-reify",
+]
+resolver = "2"
+
+[workspace.package]
+edition = "2021"
+rust-version = "1.75.0"
+license = "MIT OR Apache-2.0"
+
+[package]
+name = "reflect-rs"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Unified reification and reflection ecosystem for Rust"
+
+[dependencies]
+reflect-core = { path = "reflect-core" }
+reflect-nat = { path = "reflect-nat" }
+reflect-derive = { path = "reflect-derive" }
+reify-graph = { path = "reify-graph" }
+context-trait = { path = "context-trait" }
+async-reify = { path = "async-reify" }
+const-reify = { path = "const-reify", optional = true }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros", "time"] }
+tokio-test = "0.4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+criterion = { version = "0.5", features = ["html_reports"] }
+
+[[bench]]
+name = "benchmarks"
+harness = false
+
+[features]
+default = ["serde"]
+serde = ["reify-graph/serde", "async-reify/serde"]
+const-reify = ["dep:const-reify"]
+full = ["serde", "const-reify"]

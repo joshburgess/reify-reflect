@@ -1,0 +1,104 @@
+# reflect-rs
+
+Unified reification and reflection ecosystem for Rust.
+
+## Crates
+
+| Crate | Description |
+|---|---|
+| `reflect-core` | `Reflect` and `Reify` traits, `RuntimeValue` enum |
+| `reflect-nat` | Type-level naturals (`Z`/`S<N>`), booleans, HLists |
+| `reflect-derive` | `#[derive(Reflect)]` proc macro |
+| `reify-graph` | Rc/Arc graph reification and reconstruction |
+| `context-trait` | Runtime-synthesized trait instances (Ord, Hash, Display) |
+| `async-reify` | Async computation step graph extraction |
+| `const-reify` | Runtime-to-const-generic dispatch |
+
+## Quick Start
+
+```rust
+use reflect_rs::core::{Reflect, RuntimeValue};
+use reflect_rs::nat::{S, Z};
+
+type Three = S<S<S<Z>>>;
+assert_eq!(Three::reflect(), RuntimeValue::Nat(3));
+```
+
+### Derive Reflect for structs
+
+```rust
+use reflect_derive::Reflect;
+use reflect_core::{Reflect, RuntimeValue};
+
+#[derive(Reflect)]
+struct Config {
+    x: S<S<Z>>,        // reflects to Nat(2)
+    #[reflect(skip)]
+    _internal: String,  // skipped
+}
+```
+
+### Reify pointer graphs
+
+```rust
+use reify_graph::{reify_graph, reflect_graph};
+
+let graph = reify_graph(root, |n| n.children.clone());
+let json = serde_json::to_string(&graph)?;
+let rebuilt = reflect_graph(serde_json::from_str(&json)?, |n, kids| n.children = kids);
+```
+
+### Custom trait instances
+
+```rust
+use context_trait::{with_ord, WithContext, OrdContext};
+
+with_ord!(items, |a: &Item, b: &Item| a.score.cmp(&b.score),
+    |wrapped: &[WithContext<Item, OrdContext<Item>>]| {
+        let mut sorted = wrapped.to_vec();
+        sorted.sort();
+    }
+);
+```
+
+### Trace async workflows
+
+```rust
+use async_reify::{TracedFuture, reify_execution, to_dot};
+
+let (result, trace) = TracedFuture::run(my_async_fn()).await;
+let graph = reify_execution(trace.events);
+println!("{}", to_dot(&graph));
+```
+
+### Runtime-to-const-generic dispatch
+
+```rust
+use const_reify::{reify_const, HasModulus};
+
+let result = reify_const(42, |m| m.modulus() * 2);
+assert_eq!(result, 84);
+```
+
+## Features
+
+| Feature | Default | Description |
+|---|---|---|
+| `serde` | yes | Serialization for `reify-graph` and `async-reify` |
+| `const-reify` | no | Runtime-to-const-generic dispatch (adds compile time) |
+| `full` | no | All features |
+
+## Documentation
+
+- `cargo doc --features full --no-deps --open`
+- Design docs in [`docs/`](docs/) — one per phase
+
+## Benchmarks
+
+```sh
+cargo bench --features full
+```
+
+## License
+
+MIT OR Apache-2.0

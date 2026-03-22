@@ -1,0 +1,18 @@
+[package]
+name = "async-reify"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Async computation inspector — extract continuation structure as step graphs"
+
+[dependencies]
+serde = { version = "1", features = ["derive"], optional = true }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros", "time"] }
+tokio-test = "0.4"
+serde_json = "1"
+
+[features]
+default = []
