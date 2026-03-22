@@ -1,0 +1,18 @@
+[package]
+name = "const-reify-derive"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Proc macro: #[reifiable] for automatic const-generic dispatch"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = { version = "2", features = ["full", "extra-traits"] }
+quote = "1"
+proc-macro2 = "1"
+
+[dev-dependencies]
+const-reify = { path = "../const-reify" }
