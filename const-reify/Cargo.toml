@@ -1,0 +1,9 @@
+[package]
+name = "const-reify"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Unsafe runtime-to-const-generic bridge via vtable fabrication"
+
+[dependencies]
