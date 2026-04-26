@@ -44,6 +44,8 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
+pub mod arc;
+
 /// A stable node identifier derived from pointer identity.
 ///
 /// # Examples

@@ -5,7 +5,7 @@
 We can go from types to values with `Reflect`. But what about the reverse?
 
 Given a runtime value, can we "lift" it into a context where it behaves
-like a type-level value — safely, without unsafe code?
+like a type-level value, safely, without unsafe code?
 
 ## The Haskell Inspiration
 
@@ -17,7 +17,7 @@ reify :: a -> (forall s. Reifies s a => Proxy s -> r) -> r
 
 This takes a runtime value and passes it to a callback where it's accessible
 through a "phantom type" `s`. The `forall s` ensures the phantom type can't
-escape the callback — it's scoped.
+escape the callback. It's scoped.
 
 ## Rust's `reify` Function
 
@@ -25,7 +25,7 @@ Our `reify` function achieves the same scoping guarantee using Rust's
 borrow checker instead of Haskell's `forall`:
 
 ```rust
-use reflect_core::reify;
+use reify_reflect_core::reify;
 
 let result = reify(&42i32, |token| {
     // token is a Reified<'brand, i32>
@@ -50,7 +50,7 @@ where
     F: for<'brand> FnOnce(Reified<'brand, T>) -> R,
 ```
 
-The `for<'brand>` is key — it means the closure must work for *any*
+The `for<'brand>` is key: it means the closure must work for *any*
 lifetime `'brand`. Since the closure can't know what `'brand` is, it
 can't return anything that contains `'brand`. This prevents the token
 from escaping:
@@ -86,7 +86,7 @@ reify(&10i32, |outer| {
 | Scoping mechanism | Rank-2 `forall s` (parametricity) | `for<'brand>` (borrow checker) |
 | Safety basis | Semantic (parametricity argument) | Mechanical (compiler-enforced) |
 | Escape prevention | Type variable `s` can't escape | Lifetime `'brand` can't escape |
-| Unsafe code needed | Yes (`unsafeCoerce` internally) | No — fully safe |
+| Unsafe code needed | Yes (`unsafeCoerce` internally) | No, fully safe |
 | Works with any type | Yes | Yes |
 
 The Rust version is safer: no `unsafeCoerce`, no reliance on compiler
@@ -95,7 +95,7 @@ internals. The scoping is mechanically enforced by the borrow checker.
 ## What This Doesn't Do
 
 Branded reification gives you safe scoped access to a runtime value. But
-the token is just a reference — you **can't** use it as a type parameter:
+the token is just a reference. You **can't** use it as a type parameter:
 
 ```rust
 reify(&5u64, |token| {
@@ -107,8 +107,8 @@ reify(&5u64, |token| {
 });
 ```
 
-For true value→type dispatch — where a runtime value becomes a const
-generic — you need the next level: [Const-Generic Reification](03-const-reify.md).
+For true value→type dispatch (where a runtime value becomes a const
+generic), you need the next level: [Const-Generic Reification](03-const-reify.md).
 
 ## When to Use Branded Reify
 

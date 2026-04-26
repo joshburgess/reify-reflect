@@ -1,6 +1,6 @@
 //! Type-level booleans with [`Reflect`] implementations.
 
-use reflect_core::Reflect;
+use reify_reflect_core::Reflect;
 
 /// Type-level `true`.
 ///
@@ -8,7 +8,7 @@ use reflect_core::Reflect;
 ///
 /// ```
 /// use reflect_nat::True;
-/// use reflect_core::Reflect;
+/// use reify_reflect_core::Reflect;
 ///
 /// assert_eq!(True::reflect(), true);
 /// ```
@@ -20,7 +20,7 @@ pub struct True;
 ///
 /// ```
 /// use reflect_nat::False;
-/// use reflect_core::Reflect;
+/// use reify_reflect_core::Reflect;
 ///
 /// assert_eq!(False::reflect(), false);
 /// ```
@@ -76,7 +76,7 @@ impl Reflect for False {
 ///
 /// ```
 /// use reflect_nat::{True, False, Not};
-/// use reflect_core::Reflect;
+/// use reify_reflect_core::Reflect;
 ///
 /// assert_eq!(<<True as Not>::Result as Reflect>::reflect(), false);
 /// assert_eq!(<<False as Not>::Result as Reflect>::reflect(), true);
@@ -156,12 +156,12 @@ mod tests {
 
     #[test]
     fn true_reflects() {
-        assert_eq!(True::reflect(), true);
+        assert!(True::reflect());
     }
 
     #[test]
     fn false_reflects() {
-        assert_eq!(False::reflect(), false);
+        assert!(!False::reflect());
     }
 
     #[test]

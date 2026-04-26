@@ -188,7 +188,7 @@ mod tests {
 
     #[test]
     fn with_ord_sort() {
-        let items = vec![3i32, 1, 4, 1, 5, 9];
+        let items = [3i32, 1, 4, 1, 5, 9];
         with_ord!(
             items,
             |a: &i32, b: &i32| b.cmp(a),
@@ -203,7 +203,7 @@ mod tests {
 
     #[test]
     fn with_ord_btreeset() {
-        let items = vec![3i32, 1, 4, 1, 5];
+        let items = [3i32, 1, 4, 1, 5];
         with_ord!(
             items,
             |a: &i32, b: &i32| b.cmp(a),
@@ -217,11 +217,12 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::type_complexity)]
     fn with_hash_custom() {
         use std::collections::hash_map::DefaultHasher;
         use std::hash::Hash;
 
-        let items = vec![(1, 100), (1, 200)];
+        let items = [(1, 100), (1, 200)];
         with_hash!(
             items,
             |v: &(i32, i32), h: &mut dyn Hasher| {
@@ -240,7 +241,7 @@ mod tests {
 
     #[test]
     fn with_display_custom() {
-        let items = vec![1i32, 2, 3];
+        let items = [1i32, 2, 3];
         with_display!(
             items,
             |v: &i32, f: &mut std::fmt::Formatter| write!(f, "[{v}]"),

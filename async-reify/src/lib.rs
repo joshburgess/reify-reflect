@@ -31,3 +31,11 @@ mod traced;
 pub use graph::{reify_execution, to_dot, AsyncStepGraph, StepNode, StepOutcome};
 pub use labeled::LabeledFuture;
 pub use traced::{PollEvent, PollResult, Trace, TracedFuture};
+
+/// Attribute proc macro that rewrites every `.await` in an async function
+/// body into a [`LabeledFuture`] recording into a shared [`Trace`].
+///
+/// Re-exported from `async-reify-macros` when the `macros` feature is
+/// enabled.
+#[cfg(feature = "macros")]
+pub use async_reify_macros::trace_async;

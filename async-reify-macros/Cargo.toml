@@ -1,0 +1,20 @@
+[package]
+name = "async-reify-macros"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Attribute proc macros for async-reify (e.g. #[trace_async])"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = { version = "2", features = ["full", "visit-mut", "extra-traits"] }
+quote = "1"
+proc-macro2 = "1"
+
+[dev-dependencies]
+async-reify = { path = "../async-reify" }
+tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros", "time"] }
+tokio-test = "0.4"

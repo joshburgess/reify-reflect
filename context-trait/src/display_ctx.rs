@@ -1,4 +1,4 @@
-//! [`DisplayContext`] — custom display formatting via function pointer.
+//! [`DisplayContext`]: custom display formatting via function pointer.
 
 use crate::WithContext;
 use std::fmt;

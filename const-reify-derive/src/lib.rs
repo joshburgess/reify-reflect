@@ -6,6 +6,8 @@
 //! generates match-table dispatch functions for each const-generic method,
 //! plus `NatCallback` wrapper structs for integration with `const_reify::reify_nat`.
 
+#![deny(unsafe_code)]
+
 extern crate proc_macro;
 
 use proc_macro::TokenStream;

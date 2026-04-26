@@ -1,40 +1,40 @@
 #![deny(unsafe_code)]
 
-//! # reflect-rs
+//! # reify-reflect
 //!
 //! Unified reification and reflection ecosystem for Rust.
 //!
 //! This facade crate re-exports the core components of the ecosystem:
 //!
-//! - [`core`] — `Reflect` trait, `reify` function, `Reified` token, `RuntimeValue` enum
-//! - [`nat`] — Type-level naturals, booleans, and heterogeneous lists
-//! - [`derive`](reflect_derive) — `#[derive(Reflect)]` proc macro
-//! - [`graph`] — `Rc`/`Arc` graph reification and reconstruction
-//! - [`context`] — Runtime-synthesized trait instances
-//! - [`async_trace`] — Async computation step graph extraction
-//! - [`const_bridge`] — Runtime-to-const-generic dispatch (behind `const-reify` feature)
+//! - [`core`]: `Reflect` trait, `reify` function, `Reified` token, `RuntimeValue` enum
+//! - [`nat`]: type-level naturals, booleans, and heterogeneous lists
+//! - [`derive`](reflect_derive): `#[derive(Reflect)]` proc macro
+//! - [`graph`]: `Rc`/`Arc` graph reification and reconstruction
+//! - [`context`]: runtime-synthesized trait instances
+//! - [`async_trace`]: async computation step graph extraction
+//! - [`const_bridge`]: runtime-to-const-generic dispatch (behind `const-reify` feature)
 //!
 //! # Feature Flags
 //!
-//! - `serde` *(default)* — Enables serde support for `reify-graph` and `async-reify`
-//! - `const-reify` — Enables the `const_bridge` module for runtime-to-const-generic dispatch
-//! - `full` — Enables all features
+//! - `serde` *(default)*: enables serde support for `reify-graph` and `async-reify`
+//! - `const-reify`: enables the `const_bridge` module for runtime-to-const-generic dispatch
+//! - `full`: enables all features
 //!
 //! # Quick Start
 //!
 //! ```
-//! use reflect_rs::core::{Reflect, RuntimeValue};
-//! use reflect_rs::nat::{S, Z};
+//! use reify_reflect::core::{Reflect, RuntimeValue};
+//! use reify_reflect::nat::{S, Z};
 //!
 //! type Three = S<S<S<Z>>>;
 //! assert_eq!(Three::reflect(), RuntimeValue::Nat(3));
 //! ```
 
-/// Core traits and types: [`Reflect`](reflect_core::Reflect),
-/// [`reify`](reflect_core::reify), [`Reified`](reflect_core::Reified),
-/// [`RuntimeValue`](reflect_core::RuntimeValue).
+/// Core traits and types: [`Reflect`](reify_reflect_core::Reflect),
+/// [`reify`](reify_reflect_core::reify), [`Reified`](reify_reflect_core::Reified),
+/// [`RuntimeValue`](reify_reflect_core::RuntimeValue).
 pub mod core {
-    pub use reflect_core::*;
+    pub use reify_reflect_core::*;
 }
 
 /// Type-level naturals ([`Z`](reflect_nat::Z), [`S`](reflect_nat::S)),

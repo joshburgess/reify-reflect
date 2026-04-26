@@ -1,4 +1,4 @@
-//! [`HashContext`] — custom hashing via function pointer.
+//! [`HashContext`]: custom hashing via function pointer.
 
 use crate::WithContext;
 use std::hash::{Hash, Hasher};

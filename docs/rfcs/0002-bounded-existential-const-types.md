@@ -1,7 +1,7 @@
 # RFC 0002: Bounded Existential Const Types
 
 - **Status**: Pre-RFC / Design Exploration
-- **Context**: reflect-rs reification problem
+- **Context**: reify-reflect reification problem
 - **Related**: RFC 0001 (Rank-2 Const Quantification)
 
 ## Summary
@@ -27,9 +27,9 @@ Given `struct Modular<const N: u64>`, Rust provides no way to hold "a
 
 | Approach | Tradeoff |
 |---|---|
-| Trait object `Box<dyn HasModulus>` | Erases `N` permanently — cannot recover the const generic |
+| Trait object `Box<dyn HasModulus>` | Erases `N` permanently; cannot recover the const generic |
 | Manual enum `enum Mod { M0(Modular<0>), M1(Modular<1>), ... }` | Doesn't scale, no generic dispatch |
-| Match-table callback `reify_nat(n, &callback)` | Scoped — result must be computed inside the callback, can't return `Modular<N>` |
+| Match-table callback `reify_nat(n, &callback)` | Scoped: result must be computed inside the callback, can't return `Modular<N>` |
 
 None of these let you **store** a `Modular<N>` with runtime `N` and later
 **recover** `N` as a const generic. This is a fundamental expressiveness gap.
@@ -45,7 +45,7 @@ fn make_modular(n: u64) -> SomeModular {
 // Later, recover N and use it as a const generic
 fn use_modular(m: &SomeModular) -> u64 {
     unpack m as <const N: u64> => modular: Modular<N> {
-        // N is a const generic here — can construct other types using N,
+        // N is a const generic here, so we can construct other types using N,
         // call methods that require const N, etc.
         modular.modulus() * modular.modulus()
     }
@@ -82,7 +82,7 @@ type SomeMatrix = exists<const R: usize where R in 1..=64,
                   Matrix<R, C>;
 ```
 
-The `where N in RANGE` clause is required — unbounded existentials would
+The `where N in RANGE` clause is required: unbounded existentials would
 require runtime-sized types, conflicting with Rust's fixed-layout model.
 
 #### Pack (introduction)
@@ -105,7 +105,7 @@ fn make_nat(n: u64) -> SomeNat {
 ```
 
 A `pack_const` built-in (or macro) that dispatches a runtime value into the
-existential — this is the reification entry point.
+existential. This is the reification entry point.
 
 #### Unpack (elimination)
 
@@ -136,7 +136,7 @@ let <const N: u64> val: Modular<N> = x;
 x.unpack(|<const N: u64>| val: Modular<N> | { N * N })
 ```
 
-**Recommendation**: Option A (`match_const`) — it's visually consistent with
+**Recommendation**: Option A (`match_const`). It's visually consistent with
 existing `match` and makes the scope of `N` explicit.
 
 ### Representation
@@ -156,7 +156,7 @@ A bounded existential const type has a known, fixed layout:
   `Modular<N>`), this is zero. For `[u8; N]` with `N in 0..=255`, this is
   255 bytes.
 
-This is **exactly an enum** — the language feature automates its generation.
+This is **exactly an enum**: the language feature automates its generation.
 
 ```rust
 // exists<const N: u64 where N in 0..=255> Modular<N>
@@ -169,8 +169,8 @@ enum __SomeNat {
 }
 ```
 
-The key difference from a manual enum: `unpack` gives you a generic `N`
-— you write one handler, not 256 match arms.
+The key difference from a manual enum: `unpack` gives you a generic `N`,
+so you write one handler, not 256 match arms.
 
 ### Semantics: Pack and Unpack
 
@@ -193,7 +193,7 @@ R does not mention N
 ```
 
 The critical constraint: **R must not mention N**. The const generic `N`
-is scoped to the unpack body — it cannot escape. This prevents:
+is scoped to the unpack body and cannot escape. This prevents:
 
 ```rust
 // ILLEGAL: N escapes the unpack scope
@@ -202,7 +202,7 @@ let arr: [u8; N] = unpack x as <const N> _ { [0u8; N] };
 ```
 
 This is the same scoping that Haskell's `forall s` provides and that our
-branded lifetime `for<'brand>` approximates — but now it's real const-generic
+branded lifetime `for<'brand>` approximates, but now it's real const-generic
 scoping, not a lifetime trick.
 
 ### Interaction with monomorphization
@@ -224,7 +224,7 @@ size and alignment. It can be:
 - Borrowed: `&SomeNat`, `&mut SomeNat`
 - Placed in structs, enums, `Vec`, `Box`, etc.
 
-The `N` is not a lifetime — it does not affect borrowing.
+The `N` is not a lifetime, so it does not affect borrowing.
 
 ### Interaction with traits
 
@@ -243,7 +243,7 @@ impl Display for SomeNat { ... }
 // }
 ```
 
-This is analogous to how enums derive traits — each variant must satisfy
+This is analogous to how enums derive traits: each variant must satisfy
 the bound.
 
 ### Nesting and composition
@@ -289,7 +289,7 @@ is not currently reserved but is not a valid identifier in type position.
 ### 1. Manual enums (status quo)
 
 Works but doesn't scale. 256-variant enums are unmaintainable, and you still
-need 256 match arms to dispatch — defeating the purpose.
+need 256 match arms to dispatch, defeating the purpose.
 
 ### 2. Trait objects with recovery
 
@@ -306,7 +306,7 @@ can't provide the scoping guarantee that a language-level `unpack` provides.
 
 ### 4. Dependent pair types (full Σ-types)
 
-`Σ(N: u64). T<N>` — a dependent pair where the first component is a value
+`Σ(N: u64). T<N>`, a dependent pair where the first component is a value
 and the second component's type depends on it. This is the general form of
 what we're proposing. Bounded existentials are Σ-types restricted to bounded
 domains, which makes them compatible with Rust's compilation model.
@@ -350,7 +350,7 @@ domains, which makes them compatible with Rust's compilation model.
 - **Haskell `Exists`**: The `exists` package provides `data Some f = forall a. Some (f a)`.
   Same pattern, generalized.
 
-- **OCaml GADTs**: `type _ t = Int : int t | Bool : bool t` — existential types
+- **OCaml GADTs**: `type _ t = Int : int t | Bool : bool t`, existential types
   encoded as GADT constructors. Unpacked via pattern matching.
 
 - **GHC Proposal #378 (Unsaturated type families)**: Related work on
@@ -360,4 +360,4 @@ domains, which makes them compatible with Rust's compilation model.
   The original paper on reification that motivates this entire design space.
 
 - **Kmett's `reflection` library**: The Haskell implementation that `reify`
-  and `reflect` in reflect-rs are based on.
+  and `reflect` in reify-reflect are based on.

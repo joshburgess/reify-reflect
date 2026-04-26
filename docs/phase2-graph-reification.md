@@ -1,4 +1,4 @@
-# Phase 2 — Graph Reification
+# Phase 2: Graph Reification
 
 ## Design Decisions
 
@@ -13,7 +13,7 @@ stability is guaranteed for the lifetime of the `Rc`.
 
 Rather than requiring a trait like `GraphNode`, the API takes a closure
 `Fn(&T) -> Vec<Rc<RefCell<T>>>` to extract children. This keeps the library
-non-invasive — users don't need to modify their types to use it.
+non-invasive: users don't need to modify their types to use it.
 
 ### Clone-based extraction
 

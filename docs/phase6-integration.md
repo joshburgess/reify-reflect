@@ -1,4 +1,4 @@
-# Phase 6 — Integration, Polish, and Workspace Crate
+# Phase 6: Integration, Polish, and Workspace Crate
 
 ## Design Decisions
 

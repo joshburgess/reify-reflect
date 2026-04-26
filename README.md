@@ -1,4 +1,4 @@
-# reflect-rs
+# reify-reflect
 
 Unified reification and reflection ecosystem for Rust.
 
@@ -6,19 +6,21 @@ Unified reification and reflection ecosystem for Rust.
 
 | Crate | Description |
 |---|---|
-| `reflect-core` | `Reflect` and `Reify` traits, `RuntimeValue` enum |
-| `reflect-nat` | Type-level naturals (`Z`/`S<N>`), booleans, HLists |
+| `reify-reflect-core` | `Reflect` trait, `reify` function, `Reified` token, `RuntimeValue` enum |
+| `reflect-nat` | Type-level naturals (`Z`/`S<N>`), booleans, HLists, optional `frunk`/`typenum` bridges |
 | `reflect-derive` | `#[derive(Reflect)]` proc macro |
-| `reify-graph` | Rc/Arc graph reification and reconstruction |
+| `reify-graph` | `Rc<RefCell<T>>` and `Arc<Mutex<T>>` graph reification and reconstruction |
 | `context-trait` | Runtime-synthesized trait instances (Ord, Hash, Display) |
 | `async-reify` | Async computation step graph extraction |
-| `const-reify` | Runtime-to-const-generic dispatch |
+| `async-reify-macros` | `#[trace_async]` attribute proc macro for `async-reify` |
+| `const-reify` | Runtime-to-const-generic dispatch via match-table |
+| `const-reify-derive` | `#[reifiable]` proc macro that generates const-generic dispatch tables |
 
 ## Quick Start
 
 ```rust
-use reflect_rs::core::{Reflect, RuntimeValue};
-use reflect_rs::nat::{S, Z};
+use reify_reflect::core::{Reflect, RuntimeValue};
+use reify_reflect::nat::{S, Z};
 
 type Three = S<S<S<Z>>>;
 assert_eq!(Three::reflect(), RuntimeValue::Nat(3));
@@ -28,7 +30,7 @@ assert_eq!(Three::reflect(), RuntimeValue::Nat(3));
 
 ```rust
 use reflect_derive::Reflect;
-use reflect_core::{Reflect, RuntimeValue};
+use reify_reflect_core::{Reflect, RuntimeValue};
 
 #[derive(Reflect)]
 struct Config {
@@ -43,9 +45,12 @@ struct Config {
 ```rust
 use reify_graph::{reify_graph, reflect_graph};
 
-let graph = reify_graph(root, |n| n.children.clone());
-let json = serde_json::to_string(&graph)?;
-let rebuilt = reflect_graph(serde_json::from_str(&json)?, |n, kids| n.children = kids);
+fn round_trip(root: Rc<RefCell<Node>>) -> Result<Rc<RefCell<Node>>, serde_json::Error> {
+    let graph = reify_graph(root, |n| n.children.clone());
+    let json = serde_json::to_string(&graph)?;
+    let restored = serde_json::from_str(&json)?;
+    Ok(reflect_graph(restored, |n, kids| n.children = kids))
+}
 ```
 
 ### Custom trait instances
@@ -91,7 +96,7 @@ assert_eq!(result, 84);
 ## Documentation
 
 - `cargo doc --features full --no-deps --open`
-- Design docs in [`docs/`](docs/) — one per phase
+- Design docs in [`docs/`](docs/), one per phase
 
 ## Benchmarks
 

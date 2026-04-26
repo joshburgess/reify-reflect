@@ -1,13 +1,13 @@
 # Reification and Reflection in Rust: Bridging Runtime and Type-Level
 
-Haskell programmers have long enjoyed `Data.Reflection` — the ability
+Haskell programmers have long enjoyed `Data.Reflection`: the ability
 to take a runtime value and "lift" it into the type system, scoped to a
 callback. Inside the callback, the value is available as a type parameter,
 enabling type-safe abstractions parameterized by runtime data.
 
 Rust doesn't have this. Until now.
 
-`reflect-rs` is a collection of crates that implements the full
+`reify-reflect` is a collection of crates that implements the full
 reification/reflection pattern in safe Rust, with no `unsafe` code,
 no compiler-internal assumptions, and ergonomic macros that make it
 practical.
@@ -29,14 +29,14 @@ impl<const M: u64> Mod<M> {
 ```
 
 The type system enforces that you can't accidentally multiply values
-from different moduli — `Mod<7>` and `Mod<13>` are different types.
+from different moduli (`Mod<7>` and `Mod<13>` are different types).
 
 But const generics must be known at compile time. If the modulus comes
 from user input, a config file, or a protocol negotiation, you're stuck.
 You'd have to erase the type safety by dropping down to plain `u64`.
 
 **Reification solves this.** It takes the runtime modulus and enters a
-context where `M` is a const generic — preserving the type safety.
+context where `M` is a const generic, preserving the type safety.
 
 ## The Three Layers
 
@@ -45,7 +45,7 @@ context where `M` is a const generic — preserving the type safety.
 The simplest direction. Type-level values become runtime values:
 
 ```rust
-use reflect_core::{Reflect, RuntimeValue};
+use reify_reflect_core::{Reflect, RuntimeValue};
 use reflect_nat::{S, Z};
 
 type Three = S<S<S<Z>>>;
@@ -61,7 +61,7 @@ Based on Kiselyov & Shan's "Implicit Configurations", adapted to Rust
 using branded lifetimes instead of Haskell's `unsafeCoerce`:
 
 ```rust
-use reflect_core::reify;
+use reify_reflect_core::reify;
 
 let result = reify(&42i32, |token| {
     let val = token.reflect();
@@ -71,10 +71,10 @@ assert_eq!(result, 43);
 ```
 
 The `token` is branded with a unique lifetime that can't escape the
-closure — the borrow checker enforces this mechanically, unlike Haskell
+closure. The borrow checker enforces this mechanically, unlike Haskell
 where it relies on parametricity.
 
-This works with any type, but the value stays at the value level — you
+This works with any type, but the value stays at the value level. You
 can't use it as a const generic.
 
 ### Layer 3: Const-Generic Reify (Value → Type)
@@ -95,7 +95,7 @@ impl NatCallback<u64> for ModPow {
     }
 }
 
-// The modulus comes from runtime — but inside call<M>, it's type-level.
+// The modulus comes from runtime, but inside call<M>, it's type-level.
 let modulus: u64 = 7;
 let result = reify_nat(modulus, &ModPow { base: 3, exp: 6 });
 assert_eq!(result, 1);  // Fermat's little theorem: 3^6 ≡ 1 (mod 7)
@@ -121,7 +121,7 @@ trait ModArith {
 }
 ```
 
-The macro generates `reify_pow_mod` and `reify_mul_mod` — dispatch
+The macro generates `reify_pow_mod` and `reify_mul_mod`: dispatch
 functions that take a runtime `u64` and forward to the correct
 const-generic instantiation. Non-const-generic methods (`name`) are
 left alone.
@@ -186,7 +186,7 @@ The whole ecosystem composes. Start at the type level, go to values,
 go back to the type level, compute, return:
 
 ```rust
-use reflect_core::{Reflect, RuntimeValue};
+use reify_reflect_core::{Reflect, RuntimeValue};
 use reflect_nat::N3;
 
 // Step 1: Type-level → value
@@ -209,7 +209,7 @@ Type-level to value to type-level to value. Safe all the way.
 
 ## How It Compares to Haskell
 
-| | Haskell `reflection` | Rust `reflect-rs` |
+| | Haskell `reflection` | Rust `reify-reflect` |
 |---|---|---|
 | API | `reify val $ \proxy -> ...` | `reify_nat(val, &callback)` |
 | Scoping | Rank-2 `forall s` | `for<'brand>` / `NatCallback` trait |
@@ -227,7 +227,7 @@ performance (monomorphized code vs. dictionary lookup) and safety
 
 | Crate | What it does |
 |---|---|
-| `reflect-core` | `Reflect` trait, `reify` function, `RuntimeValue` |
+| `reify-reflect-core` | `Reflect` trait, `reify` function, `RuntimeValue` |
 | `reflect-nat` | Peano naturals, booleans, HLists |
 | `reflect-derive` | `#[derive(Reflect)]` for structs |
 | `const-reify` | `NatCallback`, `reify_nat`, `reify_nat_fn`, `def_nat_callback!` |
@@ -243,7 +243,7 @@ The `#[reifiable]` macro covers V1: single const parameter, range
 
 - Multiple const parameters per method (nested dispatch)
 - Async method support
-- A `#[derive(ConstEnum)]` for bounded existential types — store a
+- A `#[derive(ConstEnum)]` for bounded existential types: store a
   `Modular<N>` with runtime `N` and later recover `N`
 - Exploring whether Rust could support `for<const N: u64>` natively
   ([RFC sketch](rfcs/0001-rank2-const-quantification.md))
@@ -252,9 +252,9 @@ The `#[reifiable]` macro covers V1: single const parameter, range
 
 ```toml
 [dependencies]
-reflect-core = "0.1"
+reify-reflect-core = "0.1"
 const-reify = "0.1"
 const-reify-derive = "0.1"
 ```
 
-Source: [github.com/joshburgess/reflect-rs](https://github.com/joshburgess/reflect-rs)
+Source: [github.com/joshburgess/reify-reflect](https://github.com/joshburgess/reify-reflect)

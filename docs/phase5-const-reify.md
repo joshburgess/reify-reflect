@@ -1,4 +1,4 @@
-# Phase 5 — Const-Generic Bridge
+# Phase 5: Const-Generic Bridge
 
 ## Design Decisions
 
@@ -32,7 +32,7 @@ dispatch (high byte + low byte) for larger ranges.
 
 ### Modular<const N: u64> as the bridge type
 
-`Modular<N>` is a ZST — it carries no data, only the const generic value.
+`Modular<N>` is a ZST: it carries no data, only the const generic value.
 The `HasModulus` trait exposes this value at runtime. Users interact through
 `&dyn HasModulus`, enabling generic code that works across all 256 values
 without knowing `N` at compile time.

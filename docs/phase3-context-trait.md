@@ -1,4 +1,4 @@
-# Phase 3 — Local Trait Contexts
+# Phase 3: Local Trait Contexts
 
 ## Design Decisions
 
@@ -14,8 +14,8 @@ wrapper values. The tradeoff is no captured state, but this matches the
 
 Context types implement `Copy`, `Clone`, and `Debug` manually rather than
 via `derive`. This is because `derive(Copy)` adds a `T: Copy` bound, but
-our context structs only contain `fn` pointers (always `Copy`) — the `T`
-parameter is purely phantom. Manual impls avoid this spurious bound.
+our context structs only contain `fn` pointers (always `Copy`), and the
+`T` parameter is purely phantom. Manual impls avoid this spurious bound.
 
 ### WithContext is generic over Ctx
 
@@ -29,5 +29,5 @@ extensible beyond the built-in Ord/Hash/Display contexts.
 The `with_ord!`/`with_hash!`/`with_display!` macros pass the callback a
 slice reference, which sometimes requires the user to annotate the closure
 parameter type. This is a Rust type inference limitation with closures
-passed through macros. We chose clarity over magic — the type annotation
+passed through macros. We chose clarity over magic: the type annotation
 makes the API self-documenting.

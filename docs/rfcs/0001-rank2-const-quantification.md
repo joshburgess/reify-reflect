@@ -1,7 +1,7 @@
 # RFC 0001: Rank-2 Const Quantification (`for<const N: u64>`)
 
 - **Status**: Pre-RFC / Design Exploration
-- **Context**: reflect-rs reification problem
+- **Context**: reify-reflect reification problem
 
 ## Summary
 
@@ -92,7 +92,7 @@ Const-generic closures use `|<const IDENT: TYPE>|` to introduce the parameter:
 ```rust
 let f = |<const N: u64>| N * N;
 let g = |<const N: u64>| {
-    // N is a const generic in scope — can construct types parameterized by N
+    // N is a const generic in scope; can construct types parameterized by N
     let arr: [u8; N] = [0; N];
     arr.len() as u64
 };
@@ -115,7 +115,7 @@ with the quantifier inside the function type.
 **V1 (recommended): Bounded enumeration only.**
 
 When the bound is finite (`where N <= 255`), the compiler generates all
-instantiations and emits a dispatch table — exactly what a hand-written
+instantiations and emits a dispatch table: exactly what a hand-written
 match table does, but automated:
 
 ```rust
@@ -163,7 +163,7 @@ reify(42, |<const N>| N * N);
 reify(42, |<const N: u64 where N <= 255>| N * N);
 ```
 
-The `<const N>` syntax on the closure is required — without it, the compiler
+The `<const N>` syntax on the closure is required, because without it the compiler
 cannot distinguish a const-polymorphic closure from a regular one.
 
 ### Interaction with captures
@@ -181,7 +181,7 @@ reify(42, |<const N: u64>| {
 ```
 
 Each monomorphization shares the same captured environment. The closure's
-layout is identical across all instantiations — only the generated code
+layout is identical across all instantiations, and only the generated code
 differs.
 
 ### Interaction with return-type-dependent-on-N
@@ -190,7 +190,7 @@ differs.
 let f = |<const N: u64>| -> [u8; N] { [0u8; N] };
 ```
 
-This is valid — each monomorphization returns a different-sized array. However,
+This is valid: each monomorphization returns a different-sized array. However,
 the caller must handle this: the return type varies per instantiation, so the
 dispatch site needs to erase or unify the return type. In practice this means
 either:
@@ -215,7 +215,7 @@ applies here.
 
 ### 2. Compiler-magic `reify` built-in
 
-A special `reify` keyword or intrinsic. Too narrow — `for<const>` is a
+A special `reify` keyword or intrinsic. Too narrow: `for<const>` is a
 general-purpose feature that enables reification as one use case among many.
 
 ### 3. Full dependent types
@@ -240,8 +240,8 @@ on closures is the specific ergonomic improvement this RFC targets.
    `for<const T: SomeType>` where `SomeType: ConstParamTy`? Probably yes,
    but the range semantics need definition.
 
-3. **Composition of bounds**: `for<const A: u64, const B: u64 where A + B <= 255>`
-   — should the bound be an arbitrary const expression? This intersects with
+3. **Composition of bounds**: `for<const A: u64, const B: u64 where A + B <= 255>`.
+   Should the bound be an arbitrary const expression? This intersects with
    const evaluation and may be hard to enumerate.
 
 4. **Inference of bounds**: Can the compiler infer the bound from usage context
@@ -261,5 +261,5 @@ on closures is the specific ergonomic improvement this RFC targets.
 - **OCaml first-class modules**: `(module M : S)` packages existential types.
   Not directly analogous but solves similar "choose the implementation at
   runtime" problems.
-- **Scala 3 polymorphic function types**: `[N] => (x: N) => N` — polymorphic
+- **Scala 3 polymorphic function types**: `[N] => (x: N) => N`, polymorphic
   lambdas. Similar motivation.

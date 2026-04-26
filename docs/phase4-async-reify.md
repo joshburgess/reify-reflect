@@ -1,4 +1,4 @@
-# Phase 4 — Async Computation Inspector
+# Phase 4: Async Computation Inspector
 
 ## Design Decisions
 

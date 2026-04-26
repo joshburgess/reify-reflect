@@ -1,4 +1,4 @@
-# Phase 1 — Foundations: Unified Reify/Reflect Trait Family
+# Phase 1: Foundations (Unified Reify/Reflect Trait Family)
 
 ## Design Decisions
 
