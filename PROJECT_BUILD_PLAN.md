@@ -1,4 +1,4 @@
-# Rust Reification & Reflection — Agent Build Plan
+# Rust Reification & Reflection: Agent Build Plan
 
 This document is a phased implementation plan for building a unified reification/reflection ecosystem in Rust. Each phase is designed to be handed to a Claude Code agent as a self-contained task. Phases build on each other; complete them in order unless noted otherwise.
 
@@ -6,7 +6,7 @@ This document is a phased implementation plan for building a unified reification
 
 ## Guiding Principles for All Agents
 
-- Use a single Cargo workspace (`reflect-rs/`) with one crate per component.
+- Use a single Cargo workspace (`reify-reflect/`) with one crate per component.
 - Every public API must be documented with `///` doc comments and at least one `# Example` block.
 - Every crate must have `#[deny(unsafe_code)]` at the top-level **except** the crates explicitly marked as unsafe-core.
 - Write tests in `#[cfg(test)]` modules and integration tests in `tests/`. Aim for >80% coverage.
@@ -15,15 +15,15 @@ This document is a phased implementation plan for building a unified reification
 
 ---
 
-## Phase 1 — Foundations: Unified `Reify`/`Reflect` Trait Family
+## Phase 1: Foundations (Unified `Reify`/`Reflect` Trait Family)
 
 **Goal:** Establish the core trait definitions and implementations for type-level naturals, booleans, and lists. This is the substrate everything else builds on.
 
-**Crate:** `reflect-core`
+**Crate:** `reify-reflect-core`
 
-### Iteration 1.1 — Core Traits
+### Iteration 1.1: Core Traits
 
-Define the following traits in `reflect-core/src/lib.rs`:
+Define the following traits in `reify-reflect-core/src/lib.rs`:
 
 ```rust
 /// Converts a type-level value into a runtime value.
@@ -56,9 +56,9 @@ Deliverable: Compiles, all traits exported, no implementations yet.
 
 ---
 
-### Iteration 1.2 — Type-Level Naturals
+### Iteration 1.2: Type-Level Naturals
 
-**Crate:** `reflect-nat` (depends on `reflect-core`)
+**Crate:** `reflect-nat` (depends on `reify-reflect-core`)
 
 - Define `Z` (zero) and `S<N>` (successor) types.
 - Implement `Reflect` for `Z` (returns `RuntimeValue::Nat(0)`) and for `S<N: Reflect<Value = RuntimeValue>>`.
@@ -68,7 +68,7 @@ Deliverable: Compiles, all traits exported, no implementations yet.
 
 ---
 
-### Iteration 1.3 — Type-Level Booleans and Lists
+### Iteration 1.3: Type-Level Booleans and Lists
 
 Extend `reflect-nat`:
 
@@ -79,7 +79,7 @@ Extend `reflect-nat`:
 
 ---
 
-### Iteration 1.4 — Proc Macro: `#[derive(Reflect)]`
+### Iteration 1.4: `#[derive(Reflect)]` Proc Macro
 
 **Crate:** `reflect-derive`
 
@@ -89,13 +89,13 @@ Test with at least two structs, one nested.
 
 ---
 
-## Phase 2 — Graph Reification (`reify-graph`)
+## Phase 2: Graph Reification (`reify-graph`)
 
 **Goal:** Safe library to convert `Rc`/`Arc`-based pointer graphs into node-indexed adjacency representations and back.
 
 **Crate:** `reify-graph`
 
-### Iteration 2.1 — Node Detection via Pointer Identity
+### Iteration 2.1: Node Detection via Pointer Identity
 
 - Define `NodeId(usize)` as a stable identifier derived from `Rc::as_ptr` cast to `usize`.
 - Implement `fn collect_nodes<T>(root: &Rc<T>) -> HashMap<NodeId, Rc<T>>` using a recursive visitor that detects already-visited pointers.
@@ -104,7 +104,7 @@ Test with at least two structs, one nested.
 
 ---
 
-### Iteration 2.2 — Graph Extraction
+### Iteration 2.2: Graph Extraction
 
 Define:
 
@@ -129,7 +129,7 @@ Test with a DAG of at least 5 nodes with shared children.
 
 ---
 
-### Iteration 2.3 — Graph Reconstruction (`reflect_graph`)
+### Iteration 2.3: Graph Reconstruction (`reflect_graph`)
 
 Implement the inverse:
 
@@ -147,7 +147,7 @@ Test a round-trip: reify a graph, serialize node values to JSON (using `serde_js
 
 ---
 
-### Iteration 2.4 — `serde` Integration
+### Iteration 2.4: `serde` Integration
 
 Add a `serde` feature flag. When enabled:
 - Implement `Serialize`/`Deserialize` for `ReifiedGraph<T: Serialize + DeserializeOwned>`.
@@ -155,13 +155,13 @@ Add a `serde` feature flag. When enabled:
 
 ---
 
-## Phase 3 — Local Trait Contexts (`context-trait`)
+## Phase 3: Local Trait Contexts (`context-trait`)
 
 **Goal:** Enable runtime-synthesized trait instances scoped to a callback, using function pointer tables.
 
 **Crate:** `context-trait`
 
-### Iteration 3.1 — `WithContext` Wrapper Type
+### Iteration 3.1: `WithContext` Wrapper Type
 
 Define:
 
@@ -184,18 +184,18 @@ Implement `PartialEq`, `Eq`, `PartialOrd`, `Ord` for `WithContext<T, OrdContext<
 
 ---
 
-### Iteration 3.2 — `HashContext` and `DisplayContext`
+### Iteration 3.2: `HashContext` and `DisplayContext`
 
 Following the same pattern as `OrdContext`:
 
-- `HashContext<T>` with `hash: fn(&T, &mut dyn Hasher)` — implement `Hash` for `WithContext<T, HashContext<T>>`.
-- `DisplayContext<T>` with `display: fn(&T, &mut fmt::Formatter) -> fmt::Result` — implement `Display`.
+- `HashContext<T>` with `hash: fn(&T, &mut dyn Hasher)`: implement `Hash` for `WithContext<T, HashContext<T>>`.
+- `DisplayContext<T>` with `display: fn(&T, &mut fmt::Formatter) -> fmt::Result`: implement `Display`.
 
 Test: sort a `Vec<WithContext<MyStruct, OrdContext<MyStruct>>>` using a custom comparator, assert order.
 
 ---
 
-### Iteration 3.3 — `with_ord!` and `with_hash!` Macros
+### Iteration 3.3: `with_ord!` and `with_hash!` Macros
 
 Write declarative macros:
 
@@ -211,7 +211,7 @@ The macro should: wrap each item in `WithContext`, run the callback, and unwrap 
 
 ---
 
-### Iteration 3.4 — Generic `ContextImpl` Macro
+### Iteration 3.4: Generic `ContextImpl` Macro
 
 Provide a macro `impl_context_trait!` that lets users define new context types for arbitrary traits following the same pattern, so the library is extensible beyond the built-in `Ord`/`Hash`/`Display`.
 
@@ -219,13 +219,13 @@ Document with a full example deriving a custom `Summarize` trait context.
 
 ---
 
-## Phase 4 — Async Computation Inspector (`async-reify`)
+## Phase 4: Async Computation Inspector (`async-reify`)
 
 **Goal:** Instrument async functions to extract their continuation structure as an inspectable, serializable step graph.
 
 **Crate:** `async-reify`
 
-### Iteration 4.1 — `TracedFuture` Wrapper
+### Iteration 4.1: `TracedFuture` Wrapper
 
 Define `TracedFuture<F: Future>` that wraps any future and records each poll event:
 
@@ -243,7 +243,7 @@ Test: run a simple multi-step async function under a test executor and assert th
 
 ---
 
-### Iteration 4.2 — `.await` Point Labeling
+### Iteration 4.2: `.await` Point Labeling
 
 Provide an attribute macro `#[trace_async]` that rewrites an async function body, wrapping each `.await` expression with a labeled `TracedFuture` carrying the source file, line number, and optional user-supplied name:
 
@@ -260,7 +260,7 @@ Deliverable: The macro compiles and labels are captured in `PollEvent`.
 
 ---
 
-### Iteration 4.3 — Step Graph Extraction
+### Iteration 4.3: Step Graph Extraction
 
 Define:
 
@@ -284,7 +284,7 @@ Test: run a branching async function, extract graph, assert correct node and edg
 
 ---
 
-### Iteration 4.4 — Serialization and Replay Stub
+### Iteration 4.4: Serialization and Replay Stub
 
 - Add `serde` support for `AsyncStepGraph`.
 - Write a `fn to_dot(graph: &AsyncStepGraph) -> String` that outputs a Graphviz DOT representation.
@@ -293,13 +293,13 @@ Test: run a branching async function, extract graph, assert correct node and edg
 
 ---
 
-## Phase 5 — Unsafe `reify` Bridge for Const Generics
+## Phase 5: Unsafe `reify` Bridge for Const Generics
 
 **Goal:** A runtime-to-const-generic bridge using unsafe vtable fabrication. This is the most experimental phase.
 
-**Crate:** `const-reify` — **explicitly `unsafe` core; `#[deny(unsafe_code)]` is NOT set here. All unsafe blocks must have `// SAFETY:` comments.**
+**Crate:** `const-reify`. **Explicitly `unsafe` core. `#[deny(unsafe_code)]` is NOT set here. All unsafe blocks must have `// SAFETY:` comments.**
 
-### Iteration 5.1 — Design Spike and Safety Audit Doc
+### Iteration 5.1: Design Spike and Safety Audit Doc
 
 Before writing any code, produce a `DESIGN.md` in the crate root covering:
 
@@ -312,7 +312,7 @@ This document must be reviewed/acknowledged before proceeding to 5.2.
 
 ---
 
-### Iteration 5.2 — Trait Object Layout Introspection
+### Iteration 5.2: Trait Object Layout Introspection
 
 Implement a test harness that:
 - Defines a trait `HasValue { fn value(&self) -> u64; }`
@@ -324,7 +324,7 @@ This is a pure research iteration. Deliverable: a passing test that documents vt
 
 ---
 
-### Iteration 5.3 — Runtime Vtable Fabrication
+### Iteration 5.3: Runtime Vtable Fabrication
 
 Implement:
 
@@ -342,7 +342,7 @@ Restrict to `u64` values in `0..=255` for the initial implementation (reduces mo
 
 ---
 
-### Iteration 5.4 — Safe Public API Wrapper and `reify!` Macro
+### Iteration 5.4: Safe Public API Wrapper and `reify!` Macro
 
 Wrap the unsafe core in a safe macro:
 
@@ -356,14 +356,14 @@ The macro should perform bounds checking (panic if out of supported range) and c
 
 ---
 
-## Phase 6 — Integration, Polish, and Workspace Crate
+## Phase 6: Integration, Polish, and Workspace Crate
 
-**Goal:** Wire all crates together, write cross-crate integration tests, and publish a top-level `reflect-rs` facade crate.
+**Goal:** Wire all crates together, write cross-crate integration tests, and publish a top-level `reify-reflect` facade crate.
 
-### Iteration 6.1 — Workspace Facade Crate
+### Iteration 6.1: Workspace Facade Crate
 
-Create `reflect-rs/src/lib.rs` that re-exports:
-- `reflect_core::*`
+Create `reify-reflect/src/lib.rs` that re-exports:
+- `reify_reflect_core::*`
 - `reflect_nat::*`
 - `reify_graph::*`
 - `context_trait::*`
@@ -372,17 +372,17 @@ Create `reflect-rs/src/lib.rs` that re-exports:
 
 ---
 
-### Iteration 6.2 — Cross-Crate Integration Tests
+### Iteration 6.2: Cross-Crate Integration Tests
 
-Write integration tests in `reflect-rs/tests/` covering:
-- A struct using `#[derive(Reflect)]` whose fields are type-level naturals — reflect to `RuntimeValue`, assert.
+Write integration tests in `reify-reflect/tests/` covering:
+- A struct using `#[derive(Reflect)]` whose fields are type-level naturals: reflect to `RuntimeValue`, assert.
 - A graph of structs serialized via `reify_graph`, transmitted as JSON, and reconstructed.
 - A `BTreeSet` sorted via `with_ord!` using a non-default comparator.
 - An async workflow traced with `#[trace_async]`, step graph extracted and serialized to DOT.
 
 ---
 
-### Iteration 6.3 — Benchmarks
+### Iteration 6.3: Benchmarks
 
 Add `benches/` using `criterion`:
 - Benchmark `Reflect::reflect()` on a 5-level nested HList.
@@ -391,7 +391,7 @@ Add `benches/` using `criterion`:
 
 ---
 
-### Iteration 6.4 — README and Documentation Site
+### Iteration 6.4: README and Documentation Site
 
 - Write `README.md` at the workspace root with a quick-start, feature overview table, and links to each crate.
 - Ensure `cargo doc --all-features --no-deps` builds without warnings.
@@ -402,7 +402,7 @@ Add `benches/` using `criterion`:
 ## Dependency Map
 
 ```
-reflect-core
+reify-reflect-core
     └── reflect-nat        (+ frunk, typenum)
     └── reflect-derive     (proc-macro, + syn, quote)
 
@@ -414,7 +414,7 @@ async-reify                (+ tokio dev-dep, + serde optional)
 
 const-reify                (unsafe, standalone)
 
-reflect-rs (facade)
+reify-reflect (facade)
     └── all of the above
 ```
 

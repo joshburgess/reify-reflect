@@ -2,7 +2,7 @@
 
 //! # reflect-nat
 //!
-//! Type-level naturals, booleans, and heterogeneous lists with [`Reflect`](reflect_core::Reflect)
+//! Type-level naturals, booleans, and heterogeneous lists with [`Reflect`](reify_reflect_core::Reflect)
 //! implementations.
 //!
 //! ## Type-Level Naturals
@@ -17,13 +17,13 @@
 //!
 //! ## Heterogeneous Lists
 //!
-//! - [`HNil`] and [`HCons<H, T>`] with [`Reflect`](reflect_core::Reflect) implementations
+//! - [`HNil`] and [`HCons<H, T>`] with [`Reflect`](reify_reflect_core::Reflect) implementations
 //!
 //! # Examples
 //!
 //! ```
 //! use reflect_nat::{Z, S, True, False, HNil, HCons};
-//! use reflect_core::{Reflect, RuntimeValue};
+//! use reify_reflect_core::{Reflect, RuntimeValue};
 //!
 //! // Type-level natural: 3
 //! type Three = S<S<S<Z>>>;
@@ -43,6 +43,11 @@
 mod bool;
 mod hlist;
 mod nat;
+
+#[cfg(feature = "frunk")]
+pub mod frunk_bridge;
+#[cfg(feature = "typenum")]
+pub mod typenum_bridge;
 
 pub use self::bool::*;
 pub use hlist::*;

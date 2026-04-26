@@ -7,4 +7,11 @@ license.workspace = true
 description = "Type-level naturals, booleans, and HLists with Reflect implementations"
 
 [dependencies]
-reflect-core = { path = "../reflect-core" }
+reify-reflect-core = { path = "../reify-reflect-core" }
+typenum = { version = "1", optional = true }
+frunk = { version = "0.4", optional = true }
+
+[features]
+default = []
+typenum = ["dep:typenum"]
+frunk = ["dep:frunk"]

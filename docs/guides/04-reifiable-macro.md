@@ -17,14 +17,14 @@ use const_reify_derive::reifiable;
 #[reifiable(range = 0..=255)]
 trait ModArith {
     fn pow_mod<const N: u64>(&self, base: u64, exp: u64) -> u64;
-    fn name(&self) -> &str;  // not const-generic — left alone
+    fn name(&self) -> &str;  // not const-generic, left alone
 }
 ```
 
 The macro:
-1. **Leaves the trait unchanged** — it's still a normal trait
-2. **Generates `reify_pow_mod`** — a dispatch function for the const-generic method
-3. **Skips `name`** — it has no const generic, so no dispatch needed
+1. **Leaves the trait unchanged** (it's still a normal trait)
+2. **Generates `reify_pow_mod`**, a dispatch function for the const-generic method
+3. **Skips `name`** because it has no const generic, so no dispatch needed
 
 ## What Gets Generated
 
@@ -54,7 +54,7 @@ The naming convention is `reify_<method_name>`.
 
 ## Implementing the Trait
 
-You implement the trait normally — the `#[reifiable]` attribute only
+You implement the trait normally. The `#[reifiable]` attribute only
 affects the trait definition, not its impls:
 
 ```rust
@@ -63,7 +63,7 @@ struct FastModArith;
 impl ModArith for FastModArith {
     fn pow_mod<const N: u64>(&self, base: u64, exp: u64) -> u64 {
         if N == 0 { return 0; }
-        // N is a const generic — the compiler can optimize per-modulus
+        // N is a const generic, so the compiler can optimize per-modulus
         let mut result = 1u64;
         let mut b = base % N;
         let mut e = exp;
@@ -217,7 +217,7 @@ trait ArrayMaker {
 }
 ```
 
-This won't compile — the dispatch function would need a single return
+This won't compile: the dispatch function would need a single return
 type, but `[u8; N]` is different for each `N`. For these cases, use
 the manual `NatCallback` approach from Guide 3.
 

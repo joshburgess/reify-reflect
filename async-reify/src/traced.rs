@@ -1,12 +1,15 @@
-//! [`TracedFuture`] — a future wrapper that records poll events.
+//! [`TracedFuture`]: a future wrapper that records poll events.
 
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::{Arc, Mutex};
 use std::task::{Context, Poll};
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 /// The outcome of a single poll.
+///
+/// `Cancelled` is recorded when a future is dropped before completing
+/// (its last poll returned `Pending` and no `Ready` event was ever emitted).
 ///
 /// # Examples
 ///
@@ -24,31 +27,38 @@ pub enum PollResult {
     Pending,
     /// The future returned `Poll::Ready`.
     Ready,
+    /// The future was dropped before completing.
+    Cancelled,
 }
 
 /// A recorded poll event.
+///
+/// `offset` is the elapsed time since the start of the [`Trace`] this
+/// event belongs to, expressed as a [`Duration`]. This makes events
+/// serializable and replayable across processes.
 ///
 /// # Examples
 ///
 /// ```
 /// use async_reify::{PollEvent, PollResult};
-/// use std::time::Instant;
+/// use std::time::Duration;
 ///
 /// let event = PollEvent {
 ///     step: 0,
-///     timestamp: Instant::now(),
+///     offset: Duration::from_micros(150),
 ///     result: PollResult::Ready,
 ///     label: None,
 /// };
 /// assert_eq!(event.step, 0);
 /// ```
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct PollEvent {
     /// Sequential poll index (0-based).
     pub step: usize,
-    /// When this poll occurred.
-    pub timestamp: Instant,
-    /// Whether the poll returned Ready or Pending.
+    /// Time elapsed since the start of the parent [`Trace`].
+    pub offset: Duration,
+    /// Whether the poll returned Ready, Pending, or was Cancelled by drop.
     pub result: PollResult,
     /// Optional label for this await point.
     pub label: Option<String>,
@@ -56,24 +66,91 @@ pub struct PollEvent {
 
 /// Collected trace from a [`TracedFuture`].
 ///
+/// A `Trace` holds the recorded events plus a reference [`Instant`] used
+/// to compute event offsets. The reference instant is not serialized;
+/// when a `Trace` is deserialized the `start` field is reset to the
+/// deserialization time and only the per-event `offset` values are
+/// authoritative.
+///
 /// # Examples
 ///
 /// ```
 /// use async_reify::Trace;
 ///
-/// let trace = Trace { events: vec![] };
+/// let trace = Trace::new();
 /// assert!(trace.events.is_empty());
 /// ```
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Trace {
     /// All poll events in order.
     pub events: Vec<PollEvent>,
+    /// Reference instant against which each event's `offset` was measured.
+    /// Not serialized: only the offsets persist across (de)serialization.
+    #[cfg_attr(feature = "serde", serde(skip, default = "Instant::now"))]
+    pub start: Instant,
+}
+
+impl Trace {
+    /// Construct an empty trace anchored at the current instant.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use async_reify::Trace;
+    ///
+    /// let t = Trace::new();
+    /// assert!(t.events.is_empty());
+    /// ```
+    pub fn new() -> Self {
+        Self {
+            events: Vec::new(),
+            start: Instant::now(),
+        }
+    }
+
+    /// Return a fresh shared, mutex-protected trace suitable for use
+    /// with [`LabeledFuture`](crate::LabeledFuture).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use async_reify::Trace;
+    ///
+    /// let shared = Trace::shared();
+    /// assert!(shared.lock().unwrap().events.is_empty());
+    /// ```
+    pub fn shared() -> Arc<Mutex<Trace>> {
+        Arc::new(Mutex::new(Trace::new()))
+    }
+
+    /// Append an event to the trace, computing its `offset` from the
+    /// trace's reference instant.
+    pub(crate) fn push(&mut self, result: PollResult, label: Option<String>) {
+        let step = self.events.len();
+        let offset = Instant::now().saturating_duration_since(self.start);
+        self.events.push(PollEvent {
+            step,
+            offset,
+            result,
+            label,
+        });
+    }
+}
+
+impl Default for Trace {
+    fn default() -> Self {
+        Trace::new()
+    }
 }
 
 /// A future wrapper that records each poll as a [`PollEvent`].
 ///
 /// Use [`TracedFuture::run`] for a convenient way to execute a future
 /// and collect its trace.
+///
+/// If the wrapped future is dropped before it completes, a final event
+/// with [`PollResult::Cancelled`] is appended to the trace.
 ///
 /// # Examples
 ///
@@ -88,8 +165,9 @@ pub struct Trace {
 /// ```
 pub struct TracedFuture<F> {
     inner: Pin<Box<F>>,
-    events: Arc<Mutex<Vec<PollEvent>>>,
+    trace: Arc<Mutex<Trace>>,
     label: Option<String>,
+    completed: bool,
 }
 
 impl<F: Future> TracedFuture<F> {
@@ -105,8 +183,9 @@ impl<F: Future> TracedFuture<F> {
     pub fn new(inner: F) -> Self {
         Self {
             inner: Box::pin(inner),
-            events: Arc::new(Mutex::new(Vec::new())),
+            trace: Trace::shared(),
             label: None,
+            completed: false,
         }
     }
 
@@ -122,8 +201,9 @@ impl<F: Future> TracedFuture<F> {
     pub fn with_label(inner: F, label: &str) -> Self {
         Self {
             inner: Box::pin(inner),
-            events: Arc::new(Mutex::new(Vec::new())),
+            trace: Trace::shared(),
             label: Some(label.to_string()),
+            completed: false,
         }
     }
 
@@ -144,19 +224,19 @@ impl<F: Future> TracedFuture<F> {
     /// # });
     /// ```
     pub async fn run(inner: F) -> (F::Output, Trace) {
-        let events = Arc::new(Mutex::new(Vec::new()));
-        let events_clone = events.clone();
+        let trace = Trace::shared();
         let traced = TracedFuture {
             inner: Box::pin(inner),
-            events,
+            trace: trace.clone(),
             label: None,
+            completed: false,
         };
         let result = traced.await;
-        let events = Arc::try_unwrap(events_clone)
-            .expect("trace events arc should have single owner")
+        let trace = Arc::try_unwrap(trace)
+            .expect("trace arc should have single owner")
             .into_inner()
-            .expect("mutex should not be poisoned");
-        (result, Trace { events })
+            .expect("trace mutex should not be poisoned");
+        (result, trace)
     }
 }
 
@@ -165,12 +245,6 @@ impl<F: Future> Future for TracedFuture<F> {
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         let this = self.get_mut();
-        let step = this
-            .events
-            .lock()
-            .expect("mutex should not be poisoned")
-            .len();
-
         let poll_result = this.inner.as_mut().poll(cx);
 
         let result = match &poll_result {
@@ -178,17 +252,32 @@ impl<F: Future> Future for TracedFuture<F> {
             Poll::Ready(_) => PollResult::Ready,
         };
 
-        this.events
+        if matches!(result, PollResult::Ready) {
+            this.completed = true;
+        }
+
+        this.trace
             .lock()
-            .expect("mutex should not be poisoned")
-            .push(PollEvent {
-                step,
-                timestamp: Instant::now(),
-                result,
-                label: this.label.clone(),
-            });
+            .expect("trace mutex should not be poisoned")
+            .push(result, this.label.clone());
 
         poll_result
+    }
+}
+
+impl<F> Drop for TracedFuture<F> {
+    fn drop(&mut self) {
+        if !self.completed {
+            if let Ok(mut trace) = self.trace.lock() {
+                let last_was_pending = trace
+                    .events
+                    .last()
+                    .is_some_and(|e| matches!(e.result, PollResult::Pending));
+                if last_was_pending {
+                    trace.push(PollResult::Cancelled, self.label.clone());
+                }
+            }
+        }
     }
 }
 
@@ -214,7 +303,6 @@ mod tests {
         })
         .await;
         assert_eq!(val, 99);
-        // At least 2 Pending + 1 Ready
         assert!(trace.events.len() >= 3);
         assert_eq!(trace.events.last().unwrap().result, PollResult::Ready);
     }
@@ -222,9 +310,75 @@ mod tests {
     #[tokio::test]
     async fn with_label() {
         let traced = TracedFuture::with_label(async { 1 }, "test_step");
-        let events = traced.events.clone();
+        let trace = traced.trace.clone();
         let _ = traced.await;
-        let events = events.lock().unwrap();
-        assert_eq!(events[0].label.as_deref(), Some("test_step"));
+        let trace = trace.lock().unwrap();
+        assert_eq!(trace.events[0].label.as_deref(), Some("test_step"));
+    }
+
+    #[tokio::test]
+    async fn dropped_pending_future_is_cancelled() {
+        let trace_shared = Trace::shared();
+
+        // Build a future that yields once (recording Pending) then would return.
+        // Drop it after the first poll to simulate cancellation.
+        struct YieldOnce {
+            yielded: bool,
+        }
+        impl Future for YieldOnce {
+            type Output = ();
+            fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<()> {
+                if self.yielded {
+                    Poll::Ready(())
+                } else {
+                    self.yielded = true;
+                    cx.waker().wake_by_ref();
+                    Poll::Pending
+                }
+            }
+        }
+
+        let mut traced = TracedFuture {
+            inner: Box::pin(YieldOnce { yielded: false }),
+            trace: trace_shared.clone(),
+            label: Some("drop_me".into()),
+            completed: false,
+        };
+
+        // Manually poll once (record Pending) without driving to completion.
+        let waker = futures_task::noop_waker();
+        let mut cx = Context::from_waker(&waker);
+        let _ = Pin::new(&mut traced).poll(&mut cx);
+        drop(traced);
+
+        let trace = trace_shared.lock().unwrap();
+        assert!(trace.events.iter().any(|e| e.result == PollResult::Pending));
+        assert!(
+            trace
+                .events
+                .iter()
+                .any(|e| e.result == PollResult::Cancelled),
+            "expected a Cancelled event after drop, got {:?}",
+            trace.events
+        );
+    }
+
+    #[cfg(feature = "serde")]
+    #[tokio::test]
+    async fn trace_round_trip_serde() {
+        let (_, trace) = TracedFuture::run(async {
+            tokio::task::yield_now().await;
+            7
+        })
+        .await;
+        let json = serde_json::to_string(&trace).expect("serialize");
+        let restored: Trace = serde_json::from_str(&json).expect("deserialize");
+        assert_eq!(restored.events.len(), trace.events.len());
+        for (a, b) in trace.events.iter().zip(restored.events.iter()) {
+            assert_eq!(a.step, b.step);
+            assert_eq!(a.offset, b.offset);
+            assert_eq!(a.result, b.result);
+            assert_eq!(a.label, b.label);
+        }
     }
 }

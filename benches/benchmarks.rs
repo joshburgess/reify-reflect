@@ -1,8 +1,8 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
-use reflect_core::Reflect;
 use reflect_nat::{HCons, HNil, S, Z};
 use reify_graph::{reify_graph, ReifiedGraph};
+use reify_reflect_core::Reflect;
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -94,6 +94,7 @@ fn bench_sort_comparison(c: &mut Criterion) {
     c.bench_function("sort_plain_closure_10k", |b| {
         b.iter(|| {
             let mut v = data.clone();
+            #[allow(clippy::unnecessary_sort_by)]
             v.sort_by(|a, b| a.cmp(b));
             black_box(v);
         });

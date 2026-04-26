@@ -35,13 +35,13 @@
 //!
 //! Unlike Haskell's `reflection` library (which uses `unsafeCoerce` to
 //! fabricate typeclass dictionaries from GHC internals), this implementation
-//! is safe all the way down — no unsafe code, no compiler-internal
+//! is safe all the way down: no unsafe code, no compiler-internal
 //! assumptions, scoping enforced mechanically by the borrow checker.
 //!
 //! # Examples
 //!
 //! ```
-//! use reflect_core::reify;
+//! use reify_reflect_core::reify;
 //!
 //! // Lift a runtime value into a scoped type-level context
 //! let result = reify(&42i32, |token| {
@@ -61,7 +61,7 @@ use std::marker::PhantomData;
 /// # Examples
 ///
 /// ```
-/// use reflect_core::{Reflect, RuntimeValue};
+/// use reify_reflect_core::{Reflect, RuntimeValue};
 ///
 /// struct MyZero;
 ///
@@ -84,7 +84,7 @@ pub trait Reflect {
 
 /// A branded token carrying a reified value.
 ///
-/// The lifetime `'brand` is existential — created fresh by each call to
+/// The lifetime `'brand` is existential, created fresh by each call to
 /// [`reify`] and prevented from escaping the callback by the higher-rank
 /// bound `for<'brand>`. This mirrors Haskell's
 /// `forall s. Reifies s a => Proxy s -> r` scoping.
@@ -97,7 +97,7 @@ pub trait Reflect {
 /// # Examples
 ///
 /// ```
-/// use reflect_core::reify;
+/// use reify_reflect_core::reify;
 ///
 /// reify(&"hello", |token| {
 ///     assert_eq!(*token.reflect(), "hello");
@@ -107,7 +107,7 @@ pub trait Reflect {
 /// The token cannot escape:
 ///
 /// ```compile_fail
-/// use reflect_core::reify;
+/// use reify_reflect_core::reify;
 ///
 /// let escaped = reify(&42, |token| {
 ///     token // ERROR: borrowed data escapes the closure
@@ -131,7 +131,7 @@ impl<'brand, T: ?Sized> Reified<'brand, T> {
     /// # Examples
     ///
     /// ```
-    /// use reflect_core::reify;
+    /// use reify_reflect_core::reify;
     ///
     /// let doubled = reify(&21i32, |token| {
     ///     token.reflect() * 2
@@ -162,7 +162,7 @@ impl<'brand, T: ?Sized> Reified<'brand, T> {
 /// Basic reification and reflection:
 ///
 /// ```
-/// use reflect_core::reify;
+/// use reify_reflect_core::reify;
 ///
 /// let result = reify(&100u64, |token| {
 ///     token.reflect() + 1
@@ -173,7 +173,7 @@ impl<'brand, T: ?Sized> Reified<'brand, T> {
 /// Works with any type:
 ///
 /// ```
-/// use reflect_core::reify;
+/// use reify_reflect_core::reify;
 ///
 /// let result = reify(&vec![1, 2, 3], |token| {
 ///     token.reflect().iter().sum::<i32>()
@@ -184,7 +184,7 @@ impl<'brand, T: ?Sized> Reified<'brand, T> {
 /// Nested reification:
 ///
 /// ```
-/// use reflect_core::reify;
+/// use reify_reflect_core::reify;
 ///
 /// let result = reify(&10i32, |outer| {
 ///     reify(&20i32, |inner| {
@@ -197,7 +197,7 @@ impl<'brand, T: ?Sized> Reified<'brand, T> {
 /// Composing with [`Reflect`]:
 ///
 /// ```
-/// use reflect_core::{reify, Reflect, RuntimeValue};
+/// use reify_reflect_core::{reify, Reflect, RuntimeValue};
 ///
 /// struct Three;
 /// impl Reflect for Three {
@@ -234,7 +234,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use reflect_core::RuntimeValue;
+/// use reify_reflect_core::RuntimeValue;
 ///
 /// let nat = RuntimeValue::Nat(42);
 /// let boolean = RuntimeValue::Bool(true);

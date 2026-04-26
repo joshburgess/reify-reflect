@@ -1,6 +1,8 @@
-use reflect_core::{Reflect, RuntimeValue};
+#![allow(dead_code)]
+
 use reflect_derive::Reflect;
 use reflect_nat::{S, Z};
+use reify_reflect_core::{Reflect, RuntimeValue};
 
 // A simple struct with two reflectable fields
 #[derive(Reflect)]
@@ -125,11 +127,123 @@ fn derive_nested_struct() {
     }
 }
 
-// Unit struct (no fields)
+// Empty named struct (no fields, but braced)
 #[derive(Reflect)]
-struct Empty {}
+struct EmptyNamed {}
 
 #[test]
-fn derive_empty_struct() {
-    assert_eq!(Empty::reflect(), RuntimeValue::List(vec![]));
+fn derive_empty_named_struct() {
+    assert_eq!(EmptyNamed::reflect(), RuntimeValue::List(vec![]));
+}
+
+// Unit struct (no fields, no braces) → RuntimeValue::Unit
+#[derive(Reflect)]
+struct Pixel;
+
+#[test]
+fn derive_unit_struct() {
+    assert_eq!(Pixel::reflect(), RuntimeValue::Unit);
+}
+
+// Tuple struct → list of positional reflected values
+#[derive(Reflect)]
+struct Pair(S<Z>, S<S<Z>>);
+
+#[test]
+fn derive_tuple_struct() {
+    let reflected = Pair::reflect();
+    match &reflected {
+        RuntimeValue::List(values) => {
+            assert_eq!(values.len(), 2);
+            assert_eq!(values[0], RuntimeValue::Nat(1));
+            assert_eq!(values[1], RuntimeValue::Nat(2));
+        }
+        other => panic!("expected List, got {:?}", other),
+    }
+}
+
+// Tuple struct with skipped field
+#[derive(Reflect)]
+struct Tagged(#[reflect(skip)] u32, Z);
+
+#[test]
+fn derive_tuple_struct_with_skip() {
+    let reflected = Tagged::reflect();
+    match &reflected {
+        RuntimeValue::List(values) => {
+            assert_eq!(values.len(), 1);
+            assert_eq!(values[0], RuntimeValue::Nat(0));
+        }
+        other => panic!("expected List, got {:?}", other),
+    }
+}
+
+// Enum with mixed-shape variants
+#[derive(Reflect)]
+enum Shape {
+    Dot,
+    Line(S<S<Z>>),
+    Box { w: S<Z>, h: S<S<S<Z>>> },
+}
+
+#[test]
+fn derive_enum_with_mixed_variants() {
+    let reflected = Shape::reflect();
+    let variants = match reflected {
+        RuntimeValue::List(v) => v,
+        other => panic!("expected List, got {:?}", other),
+    };
+    assert_eq!(variants.len(), 3);
+
+    // Dot (unit) → [name_bytes, Unit]
+    let dot = match &variants[0] {
+        RuntimeValue::List(v) => v,
+        _ => panic!(),
+    };
+    assert_eq!(
+        dot[0],
+        RuntimeValue::List(
+            b"Dot"
+                .iter()
+                .map(|b| RuntimeValue::Nat(*b as u64))
+                .collect()
+        )
+    );
+    assert_eq!(dot[1], RuntimeValue::Unit);
+
+    // Line(S<S<Z>>) → [name_bytes, [Nat(2)]]
+    let line = match &variants[1] {
+        RuntimeValue::List(v) => v,
+        _ => panic!(),
+    };
+    assert_eq!(
+        line[0],
+        RuntimeValue::List(
+            b"Line"
+                .iter()
+                .map(|b| RuntimeValue::Nat(*b as u64))
+                .collect()
+        )
+    );
+    assert_eq!(line[1], RuntimeValue::List(vec![RuntimeValue::Nat(2)]));
+
+    // Box { w, h } → [name_bytes, [[name_bytes, Nat(1)], [name_bytes, Nat(3)]]]
+    let bx = match &variants[2] {
+        RuntimeValue::List(v) => v,
+        _ => panic!(),
+    };
+    assert_eq!(
+        bx[0],
+        RuntimeValue::List(
+            b"Box"
+                .iter()
+                .map(|b| RuntimeValue::Nat(*b as u64))
+                .collect()
+        )
+    );
+    let bx_fields = match &bx[1] {
+        RuntimeValue::List(v) => v,
+        _ => panic!(),
+    };
+    assert_eq!(bx_fields.len(), 2);
 }

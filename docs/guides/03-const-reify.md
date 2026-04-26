@@ -3,7 +3,7 @@
 ## The Gap
 
 Branded reification (Guide 2) gives you scoped access to a runtime value,
-but the value stays at the value level — you can't use it as a type
+but the value stays at the value level. You can't use it as a type
 parameter. This guide covers the mechanism that actually bridges runtime
 values into the type system.
 
@@ -56,7 +56,7 @@ assert_eq!(sum, 8);
 ```
 
 The closure receives `N` as a plain `u64`. You can't construct types
-parameterized by `N` — but for arithmetic, comparisons, and most
+parameterized by `N`, but for arithmetic, comparisons, and most
 computations, this is all you need.
 
 ### Level 2: Macro-defined callback (const generic available)
@@ -78,7 +78,7 @@ assert_eq!(reify_nat(5, &Factorial), 120);
 assert_eq!(reify_nat(10, &Factorial), 3628800);
 ```
 
-Inside the macro body, `N` is a real `const u64` — the compiler
+Inside the macro body, `N` is a real `const u64`: the compiler
 knows its value for each monomorphization. But you still can't
 construct `Modular<N>` because the macro expands to a simple
 expression, not a full impl block.
@@ -112,7 +112,7 @@ impl NatCallback<u64> for ModPow {
             }
         }
 
-        // Type-safe modular arithmetic — the type system
+        // Type-safe modular arithmetic: the type system
         // prevents mixing values from different moduli.
         let mut result = Mod::<M>::new(1);
         let mut base = Mod::<M>::new(self.base);
@@ -172,7 +172,7 @@ most of them away.
 You might wonder: why can't we just write `|<const N: u64>| N * N`?
 
 Because Rust doesn't support const-generic closures. A closure's type is
-anonymous and compiler-generated — there's no way to add `<const N: u64>`
+anonymous and compiler-generated, and there's no way to add `<const N: u64>`
 to it. The `NatCallback` trait is a workaround: it's a named type with
 a const-generic method, which Rust does support.
 
@@ -197,5 +197,5 @@ This is a language limitation, not a fundamental one. We've written an
   dispatch tables.
 - **Nesting**: Each level of nesting multiplies the monomorphization count.
 
-Next guide: [The #[reifiable] Macro](04-reifiable-macro.md) — automating
+Next guide: [The #[reifiable] Macro](04-reifiable-macro.md), automating
 dispatch for your own traits.

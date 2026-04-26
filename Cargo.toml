@@ -1,11 +1,12 @@
 [workspace]
 members = [
-    "reflect-core",
+    "reify-reflect-core",
     "reflect-nat",
     "reflect-derive",
     "reify-graph",
     "context-trait",
     "async-reify",
+    "async-reify-macros",
     "const-reify",
     "const-reify-derive",
 ]
@@ -17,7 +18,7 @@ rust-version = "1.75.0"
 license = "MIT OR Apache-2.0"
 
 [package]
-name = "reflect-rs"
+name = "reify-reflect"
 version = "0.1.0"
 edition.workspace = true
 rust-version.workspace = true
@@ -25,7 +26,7 @@ license.workspace = true
 description = "Unified reification and reflection ecosystem for Rust"
 
 [dependencies]
-reflect-core = { path = "reflect-core" }
+reify-reflect-core = { path = "reify-reflect-core" }
 reflect-nat = { path = "reflect-nat" }
 reflect-derive = { path = "reflect-derive" }
 reify-graph = { path = "reify-graph" }
@@ -50,4 +51,6 @@ harness = false
 default = ["serde"]
 serde = ["reify-graph/serde", "async-reify/serde"]
 const-reify = ["dep:const-reify"]
-full = ["serde", "const-reify"]
+typenum = ["reflect-nat/typenum"]
+frunk = ["reflect-nat/frunk"]
+full = ["serde", "const-reify", "typenum", "frunk"]

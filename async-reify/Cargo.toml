@@ -4,15 +4,19 @@ version = "0.1.0"
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
-description = "Async computation inspector — extract continuation structure as step graphs"
+description = "Async computation inspector: extract continuation structure as step graphs"
 
 [dependencies]
 serde = { version = "1", features = ["derive"], optional = true }
+async-reify-macros = { path = "../async-reify-macros", optional = true }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros", "time"] }
 tokio-test = "0.4"
 serde_json = "1"
+futures-task = "0.3"
+async-reify-macros = { path = "../async-reify-macros" }
 
 [features]
 default = []
+macros = ["dep:async-reify-macros"]

@@ -1,4 +1,4 @@
-//! [`OrdContext`] — custom ordering via function pointer.
+//! [`OrdContext`]: custom ordering via function pointer.
 
 use crate::WithContext;
 use std::cmp::Ordering;

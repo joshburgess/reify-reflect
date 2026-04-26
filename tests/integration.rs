@@ -1,8 +1,8 @@
 //! Cross-crate integration tests for reflect-rs.
 #![allow(dead_code)]
 
-use reflect_rs::core::{Reflect, RuntimeValue};
-use reflect_rs::nat::{False, HCons, HNil, True, N3, N5, S, Z};
+use reify_reflect::core::{Reflect, RuntimeValue};
+use reify_reflect::nat::{False, HCons, HNil, True, N3, N5, S, Z};
 
 // --- Phase 1: Derive + type-level naturals ---
 
@@ -76,15 +76,15 @@ fn type_level_hlist_reflect() {
 
 #[test]
 fn type_level_booleans_reflect() {
-    assert_eq!(True::reflect(), true);
-    assert_eq!(False::reflect(), false);
+    assert!(True::reflect());
+    assert!(!False::reflect());
 }
 
 // --- Phase 2: Graph reification via JSON round-trip ---
 
 #[cfg(feature = "serde")]
 mod graph_serde {
-    use reflect_rs::graph::{reflect_graph, reify_graph, ReifiedGraph};
+    use reify_reflect::graph::{reflect_graph, reify_graph, ReifiedGraph};
     use std::cell::RefCell;
     use std::rc::Rc;
 
@@ -128,7 +128,7 @@ mod graph_serde {
 // --- Phase 3: BTreeSet with custom Ord via with_ord! ---
 
 mod context_ord {
-    use reflect_rs::context::{with_ord, OrdContext, WithContext};
+    use reify_reflect::context::{with_ord, OrdContext, WithContext};
     use std::collections::BTreeSet;
 
     #[test]
@@ -139,7 +139,7 @@ mod context_ord {
             name: String,
         }
 
-        let items = vec![
+        let items = [
             Item {
                 score: 3,
                 name: "c".into(),
@@ -174,7 +174,7 @@ mod context_ord {
 
     #[test]
     fn sort_with_custom_comparator() {
-        let items = vec![5i32, 2, 8, 1, 9];
+        let items = [5i32, 2, 8, 1, 9];
         with_ord!(
             items,
             |a: &i32, b: &i32| b.cmp(a), // reverse
@@ -191,22 +191,22 @@ mod context_ord {
 // --- Phase 4: Async tracing ---
 
 mod async_trace {
-    use reflect_rs::async_trace::{labeled_await, reify_execution, to_dot, PollEvent};
-    use std::sync::{Arc, Mutex};
+    use reify_reflect::async_trace::{labeled_await, reify_execution, to_dot, Trace};
+    use std::sync::Arc;
 
     #[tokio::test]
     async fn traced_workflow_step_graph() {
-        let log = Arc::new(Mutex::new(Vec::<PollEvent>::new()));
+        let trace = Trace::shared();
 
-        labeled_await!(async { 1 }, log).await;
-        labeled_await!(async { 2 }, log).await;
-        labeled_await!(async { 3 }, log).await;
+        labeled_await!(async { 1 }, trace).await;
+        labeled_await!(async { 2 }, trace).await;
+        labeled_await!(async { 3 }, trace).await;
 
-        let events = Arc::try_unwrap(log).unwrap().into_inner().unwrap();
+        let trace = Arc::try_unwrap(trace).ok().unwrap().into_inner().unwrap();
 
-        let graph = reify_execution(events);
+        let graph = reify_execution(trace.events);
         assert_eq!(graph.steps.len(), 3);
-        assert_eq!(graph.edges.len(), 2); // step0->step1, step1->step2
+        assert_eq!(graph.edges.len(), 2);
 
         let dot = to_dot(&graph);
         assert!(dot.contains("digraph"));
@@ -217,21 +217,38 @@ mod async_trace {
     #[cfg(feature = "serde")]
     #[tokio::test]
     async fn step_graph_serialization() {
-        let log = Arc::new(Mutex::new(Vec::<PollEvent>::new()));
+        let trace = Trace::shared();
 
-        labeled_await!(async { "a" }, log).await;
-        labeled_await!(async { "b" }, log).await;
+        labeled_await!(async { "a" }, trace).await;
+        labeled_await!(async { "b" }, trace).await;
 
-        let events = Arc::try_unwrap(log).unwrap().into_inner().unwrap();
+        let trace = Arc::try_unwrap(trace).ok().unwrap().into_inner().unwrap();
 
-        let graph = reify_execution(events);
+        let graph = reify_execution(trace.events);
         let json = serde_json::to_string_pretty(&graph).unwrap();
         assert!(json.contains("steps"));
         assert!(json.contains("edges"));
 
-        // Deserialize back
         let parsed: async_reify::AsyncStepGraph = serde_json::from_str(&json).unwrap();
         assert_eq!(parsed.steps.len(), graph.steps.len());
+    }
+
+    #[cfg(feature = "serde")]
+    #[tokio::test]
+    async fn raw_trace_serialization() {
+        let trace = Trace::shared();
+        labeled_await!(async { 1 }, trace).await;
+        labeled_await!(async { 2 }, trace).await;
+        let trace = Arc::try_unwrap(trace).ok().unwrap().into_inner().unwrap();
+
+        let json = serde_json::to_string(&trace).unwrap();
+        let restored: Trace = serde_json::from_str(&json).unwrap();
+        assert_eq!(restored.events.len(), trace.events.len());
+        for (a, b) in trace.events.iter().zip(restored.events.iter()) {
+            assert_eq!(a.offset, b.offset);
+            assert_eq!(a.result, b.result);
+            assert_eq!(a.label, b.label);
+        }
     }
 }
 
@@ -239,7 +256,7 @@ mod async_trace {
 
 #[cfg(feature = "const-reify")]
 mod const_bridge {
-    use reflect_rs::const_bridge::reify_const;
+    use reify_reflect::const_bridge::reify_const;
 
     #[test]
     fn reify_and_use_const() {

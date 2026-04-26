@@ -1,7 +1,7 @@
 # Design: `#[reifiable]` Proc Macro for Automatic Const-Generic Dispatch
 
 - **Status**: Design / Feasibility Analysis
-- **Context**: reflect-rs reification, implementable today
+- **Context**: reify-reflect reification, implementable today
 - **Related**: RFC 0001, RFC 0002 (this is the "do it now" version)
 
 ## Summary
@@ -277,8 +277,8 @@ Options:
    const parameter. This is the conservative V1 approach.
 2. **Erase to Vec**: Generate a dispatch function returning `Vec<u8>` with
    an internal `to_vec()` call. Loses zero-copy but works.
-3. **User-annotated erased type**: `#[reifiable(range = 0..=255, erase_return = Vec<u8>)]`
-   — the user specifies how to erase the return type.
+3. **User-annotated erased type**: `#[reifiable(range = 0..=255, erase_return = Vec<u8>)]`,
+   where the user specifies how to erase the return type.
 4. **Defer to bounded existentials** (RFC 0002): Return
    `exists<const N> [u8; N]`. Not available today.
 
@@ -317,7 +317,7 @@ trait WithDefault {
 ```
 
 The dispatch function calls the method regardless of whether it's default
-or overridden. Default impls are handled transparently — no special casing
+or overridden. Default impls are handled transparently, with no special casing
 needed.
 
 ### Multiple const parameters with different types
@@ -371,7 +371,7 @@ monomorphizations are `R₁ × R₂ × ... × Rₖ`.
 
 3. **Lazy instantiation**: Only generate monomorphizations for const values
    that are actually used. This requires whole-program analysis and is
-   not feasible for a proc macro — it's a compiler optimization.
+   not feasible for a proc macro: it's a compiler optimization.
 
 ## Implementation Plan
 
@@ -441,5 +441,5 @@ The proc macro covers the reification use case completely. Bounded existentials
 (RFC 0002) cover the "store and later recover" use case that the proc macro
 cannot address.
 
-If RFC 0001 is adopted, the proc macro becomes unnecessary — closures with
+If RFC 0001 is adopted, the proc macro becomes unnecessary: closures with
 `for<const N>` would replace the generated dispatch functions entirely.

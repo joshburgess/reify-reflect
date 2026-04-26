@@ -1,6 +1,6 @@
 //! Type-level heterogeneous lists with [`Reflect`] implementations.
 
-use reflect_core::{Reflect, RuntimeValue};
+use reify_reflect_core::{Reflect, RuntimeValue};
 use std::marker::PhantomData;
 
 /// The empty heterogeneous list.
@@ -9,9 +9,9 @@ use std::marker::PhantomData;
 ///
 /// ```
 /// use reflect_nat::HNil;
-/// use reflect_core::Reflect;
+/// use reify_reflect_core::Reflect;
 ///
-/// assert_eq!(HNil::reflect(), Vec::<reflect_core::RuntimeValue>::new());
+/// assert_eq!(HNil::reflect(), Vec::<reify_reflect_core::RuntimeValue>::new());
 /// ```
 pub struct HNil;
 
@@ -21,7 +21,7 @@ pub struct HNil;
 ///
 /// ```
 /// use reflect_nat::{HNil, HCons, Z, S};
-/// use reflect_core::{Reflect, RuntimeValue};
+/// use reify_reflect_core::{Reflect, RuntimeValue};
 ///
 /// // A list containing [1, 0] at the type level
 /// type MyList = HCons<S<Z>, HCons<Z, HNil>>;

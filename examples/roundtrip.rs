@@ -11,8 +11,8 @@
 //!
 //! Run with: `cargo run --example roundtrip --features const-reify`
 
-use reflect_core::{reify, Reflect, RuntimeValue};
 use reflect_nat::{N3, N5, S, Z};
+use reify_reflect_core::{reify, Reflect, RuntimeValue};
 
 // ============================================================================
 // Part 1: Type-Level → Value (Reflect)
@@ -30,6 +30,7 @@ fn part1_reflect() {
 
     // Derived structs reflect their fields
     #[derive(reflect_derive::Reflect)]
+    #[allow(dead_code)]
     struct Config {
         width: N3,
         height: N5,
@@ -61,7 +62,12 @@ fn part2_reify_branded() {
     let sum = reify(&10i32, |a| {
         reify(&20i32, |b| {
             let result = a.reflect() + b.reflect();
-            println!("  Nested reify: {} + {} = {}", a.reflect(), b.reflect(), result);
+            println!(
+                "  Nested reify: {} + {} = {}",
+                a.reflect(),
+                b.reflect(),
+                result
+            );
             result
         })
     });
@@ -95,7 +101,9 @@ struct ModArithImpl;
 
 impl ModularArith for ModArithImpl {
     fn pow_mod<const N: u64>(&self, base: u64, exp: u64) -> u64 {
-        if N == 0 { return 0; }
+        if N == 0 {
+            return 0;
+        }
         let mut result = 1u64;
         let mut b = base % N;
         let mut e = exp;
@@ -110,7 +118,9 @@ impl ModularArith for ModArithImpl {
     }
 
     fn is_qr<const N: u64>(&self, a: u64) -> bool {
-        if N <= 1 { return true; }
+        if N <= 1 {
+            return true;
+        }
         // Euler's criterion: a is a QR mod p iff a^((p-1)/2) ≡ 1 (mod p)
         self.pow_mod::<N>(a, (N - 1) / 2) == 1
     }
@@ -156,8 +166,8 @@ fn part4_full_roundtrip() {
     println!("=== Part 4: Full Roundtrip ===\n");
 
     // Step 1: Start at the type level
-    type Base = S<S<S<Z>>>;     // 3
-    type Exponent = N5;          // 5
+    type Base = S<S<S<Z>>>; // 3
+    type Exponent = N5; // 5
 
     // Step 2: Reflect to runtime values
     let base_val = match Base::reflect() {
@@ -177,16 +187,23 @@ fn part4_full_roundtrip() {
 
     // Step 4: Reify the modulus into a const-generic context and compute
     let result = reify_pow_mod(modulus, &ModArithImpl, base_val, exp_val);
-    println!("  Reified computation: {}^{} mod {} = {}", base_val, exp_val, modulus, result);
+    println!(
+        "  Reified computation: {}^{} mod {} = {}",
+        base_val, exp_val, modulus, result
+    );
 
     // Step 5: We can also use the NatCallback trait directly for full const-generic power
-    use const_reify::nat_reify::{NatCallback, reify_nat};
+    use const_reify::nat_reify::{reify_nat, NatCallback};
 
-    struct FermatTest { base: u64 }
+    struct FermatTest {
+        base: u64,
+    }
 
     impl NatCallback<bool> for FermatTest {
         fn call<const P: u64>(&self) -> bool {
-            if P <= 1 { return false; }
+            if P <= 1 {
+                return false;
+            }
             // Inside here, P is a const generic.
             // We could construct [u8; P], Mod<P>, etc.
             // For now, test Fermat's little theorem.
@@ -194,7 +211,9 @@ fn part4_full_roundtrip() {
             let mut b = self.base % P;
             let mut e = P - 1;
             while e > 0 {
-                if e % 2 == 1 { result = result * b % P; }
+                if e % 2 == 1 {
+                    result = result * b % P;
+                }
                 b = b * b % P;
                 e /= 2;
             }
@@ -227,7 +246,7 @@ fn part4_full_roundtrip() {
 fn part5_macro_ergonomics() {
     println!("=== Part 5: Macro Ergonomics ===\n");
 
-    use const_reify::nat_reify::{reify_nat, reify_nat_fn, reify_nat2_fn};
+    use const_reify::nat_reify::{reify_nat, reify_nat2_fn, reify_nat_fn};
 
     // Closure-based (simplest, no const generic access)
     let squared = reify_nat_fn(12, |n| n * n);

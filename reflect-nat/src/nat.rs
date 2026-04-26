@@ -1,6 +1,6 @@
 //! Peano-encoded type-level natural numbers with type-level arithmetic.
 
-use reflect_core::{Reflect, RuntimeValue};
+use reify_reflect_core::{Reflect, RuntimeValue};
 use std::marker::PhantomData;
 
 /// Type-level zero.
@@ -9,10 +9,11 @@ use std::marker::PhantomData;
 ///
 /// ```
 /// use reflect_nat::Z;
-/// use reflect_core::{Reflect, RuntimeValue};
+/// use reify_reflect_core::{Reflect, RuntimeValue};
 ///
 /// assert_eq!(Z::reflect(), RuntimeValue::Nat(0));
 /// ```
+#[derive(Default, Debug, Clone, Copy)]
 pub struct Z;
 
 /// Type-level successor. `S<N>` represents `N + 1`.
@@ -21,14 +22,15 @@ pub struct Z;
 ///
 /// ```
 /// use reflect_nat::{Z, S};
-/// use reflect_core::{Reflect, RuntimeValue};
+/// use reify_reflect_core::{Reflect, RuntimeValue};
 ///
 /// type One = S<Z>;
 /// type Two = S<S<Z>>;
 /// assert_eq!(One::reflect(), RuntimeValue::Nat(1));
 /// assert_eq!(Two::reflect(), RuntimeValue::Nat(2));
 /// ```
-pub struct S<N>(PhantomData<N>);
+#[derive(Default, Debug, Clone, Copy)]
+pub struct S<N>(pub PhantomData<N>);
 
 /// Marker trait for types that represent type-level natural numbers.
 ///
@@ -84,7 +86,7 @@ impl<N: Nat> Reflect for S<N> {
 ///
 /// ```
 /// use reflect_nat::{Z, S, Add};
-/// use reflect_core::{Reflect, RuntimeValue};
+/// use reify_reflect_core::{Reflect, RuntimeValue};
 ///
 /// // 2 + 3 = 5
 /// type Two = S<S<Z>>;
@@ -116,7 +118,7 @@ where
 ///
 /// ```
 /// use reflect_nat::{Z, S, Mul};
-/// use reflect_core::{Reflect, RuntimeValue};
+/// use reify_reflect_core::{Reflect, RuntimeValue};
 ///
 /// // 2 * 3 = 6
 /// type Two = S<S<Z>>;
@@ -261,6 +263,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::assertions_on_constants)]
     fn less_than() {
         assert!(!<Z as Lt<Z>>::VALUE);
         assert!(<Z as Lt<S<Z>>>::VALUE);

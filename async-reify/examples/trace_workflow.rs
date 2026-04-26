@@ -3,8 +3,7 @@
 //!
 //! Run with: `cargo run -p async-reify --example trace_workflow`
 
-use async_reify::{labeled_await, reify_execution, to_dot, PollEvent};
-use std::sync::{Arc, Mutex};
+use async_reify::{labeled_await, reify_execution, to_dot, Trace};
 
 async fn simulate_work() {
     tokio::task::yield_now().await;
@@ -12,25 +11,25 @@ async fn simulate_work() {
 
 #[tokio::main]
 async fn main() {
-    let log = Arc::new(Mutex::new(Vec::<PollEvent>::new()));
+    let trace = Trace::shared();
 
     // Step 1: fetch
-    labeled_await!(simulate_work(), log).await;
+    labeled_await!(simulate_work(), trace).await;
 
     // Step 2: transform
-    labeled_await!(simulate_work(), log).await;
+    labeled_await!(simulate_work(), trace).await;
 
     // Step 3: store
-    labeled_await!(async { 42 }, log).await;
+    labeled_await!(async { 42 }, trace).await;
 
-    let events = Arc::try_unwrap(log)
+    let trace = Arc::try_unwrap(trace)
         .expect("single owner")
         .into_inner()
         .expect("not poisoned");
 
-    println!("Collected {} poll events", events.len());
+    println!("Collected {} poll events", trace.events.len());
 
-    let graph = reify_execution(events);
+    let graph = reify_execution(trace.events);
     println!(
         "Step graph: {} steps, {} edges",
         graph.steps.len(),
@@ -47,10 +46,11 @@ async fn main() {
     let dot = to_dot(&graph);
     println!("\nDOT output:\n{dot}");
 
-    // Serde round-trip (if feature enabled)
     #[cfg(feature = "serde")]
     {
         let json = serde_json::to_string_pretty(&graph).unwrap();
         println!("\nJSON:\n{json}");
     }
 }
+
+use std::sync::Arc;

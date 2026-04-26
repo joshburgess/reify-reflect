@@ -272,7 +272,7 @@ pub fn reify_nat2_fn<F: Fn(u64, u64) -> R, R>(a: u64, b: u64, f: F) -> R {
 ///
 /// Two forms:
 ///
-/// **Stateless** — no captured data, just a const-generic body:
+/// **Stateless**: no captured data, just a const-generic body:
 /// ```
 /// use const_reify::{def_nat_callback, nat_reify::reify_nat};
 ///
@@ -281,7 +281,7 @@ pub fn reify_nat2_fn<F: Fn(u64, u64) -> R, R>(a: u64, b: u64, f: F) -> R {
 /// assert_eq!(reify_nat(5, &Square), 25);
 /// ```
 ///
-/// **With fields** — captures runtime data alongside the const generic:
+/// **With fields**: captures runtime data alongside the const generic:
 /// ```
 /// use const_reify::{def_nat_callback, nat_reify::reify_nat};
 ///
@@ -528,7 +528,7 @@ mod tests {
     #[test]
     fn reify_nat_fn_basic() {
         assert_eq!(reify_nat_fn(5, |n| n * n), 25);
-        assert_eq!(reify_nat_fn(0, |n| n == 0), true);
+        assert!(reify_nat_fn(0, |n| n == 0));
         assert_eq!(reify_nat_fn(255, |n| n), 255);
     }
 
@@ -542,7 +542,7 @@ mod tests {
     fn reify_nat2_fn_basic() {
         assert_eq!(reify_nat2_fn(5, 3, |a, b| a + b), 8);
         assert_eq!(reify_nat2_fn(6, 7, |a, b| a * b), 42);
-        assert_eq!(reify_nat2_fn(3, 5, |a, b| a < b), true);
+        assert!(reify_nat2_fn(3, 5, |a, b| a < b));
     }
 
     #[test]
