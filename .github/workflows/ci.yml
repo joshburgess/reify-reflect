@@ -12,22 +12,31 @@ env:
 
 jobs:
   test:
-    name: build & test (${{ matrix.toolchain }})
+    name: build & test (stable)
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        toolchain: [stable, "1.75.0"]
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: ${{ matrix.toolchain }}
+      - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: build
         run: cargo build --workspace --all-features --all-targets
       - name: test
         run: cargo test --workspace --all-features
+
+  msrv:
+    # MSRV applies to library consumers. We build the library with all features,
+    # but don't run dev-dep-pulling commands like `cargo test` or
+    # `cargo build --all-targets`, since those compile criterion/etc. which
+    # may have a higher MSRV than the public API of this workspace requires.
+    name: build (MSRV 1.75.0)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.75.0"
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build --workspace --all-features
 
   lint:
     name: clippy & fmt
