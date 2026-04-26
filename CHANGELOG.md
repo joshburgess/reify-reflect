@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.1.0] - Unreleased
+## [0.1.0] - 2026-04-26
 
 ### Phase 1: Foundations (unified Reify/Reflect trait family)
 - `reify-reflect-core`: `Reflect` trait, `Reified<'brand, T>` branded token, `reify` scoped function, `RuntimeValue` enum
