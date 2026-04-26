@@ -1,21 +1,26 @@
 [package]
 name = "async-reify"
-version = "0.1.0"
+version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Async computation inspector: extract continuation structure as step graphs"
+keywords = ["async", "future", "tracing", "reflection", "reify"]
+categories = ["asynchronous", "rust-patterns"]
 
 [dependencies]
-serde = { version = "1", features = ["derive"], optional = true }
-async-reify-macros = { path = "../async-reify-macros", optional = true }
+serde = { workspace = true, optional = true }
+async-reify-macros = { workspace = true, optional = true }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros", "time"] }
 tokio-test = "0.4"
 serde_json = "1"
 futures-task = "0.3"
-async-reify-macros = { path = "../async-reify-macros" }
+async-reify-macros = { workspace = true }
 
 [features]
 default = []

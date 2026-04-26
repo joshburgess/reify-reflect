@@ -1,6 +1,6 @@
 //! # Full Roundtrip: Type-Level → Value → Type-Level → Value
 //!
-//! This example demonstrates the complete reflect-rs ecosystem:
+//! This example demonstrates the complete reify-reflect ecosystem:
 //!
 //! 1. **Reflect** (type → value): Peano naturals and derived structs produce runtime values
 //! 2. **Reify** (value → scoped context): Branded lifetime token for safe scoped access

@@ -1,4 +1,4 @@
-//! Cross-crate integration tests for reflect-rs.
+//! Cross-crate integration tests for reify-reflect.
 #![allow(dead_code)]
 
 use reify_reflect::core::{Reflect, RuntimeValue};

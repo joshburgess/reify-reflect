@@ -13,35 +13,61 @@ members = [
 resolver = "2"
 
 [workspace.package]
+version = "0.1.0"
 edition = "2021"
 rust-version = "1.75.0"
 license = "MIT OR Apache-2.0"
+repository = "https://github.com/joshburgess/reify-reflect"
+homepage = "https://github.com/joshburgess/reify-reflect"
+authors = ["Josh Burgess <joshburgesswebdev@gmail.com>"]
+
+[workspace.dependencies]
+reify-reflect-core = { version = "0.1.0", path = "reify-reflect-core" }
+reflect-nat = { version = "0.1.0", path = "reflect-nat" }
+reflect-derive = { version = "0.1.0", path = "reflect-derive" }
+reify-graph = { version = "0.1.0", path = "reify-graph" }
+context-trait = { version = "0.1.0", path = "context-trait" }
+async-reify = { version = "0.1.0", path = "async-reify" }
+async-reify-macros = { version = "0.1.0", path = "async-reify-macros" }
+const-reify = { version = "0.1.0", path = "const-reify" }
+const-reify-derive = { version = "0.1.0", path = "const-reify-derive" }
+
+serde = { version = "1", features = ["derive"] }
+syn = "2"
+quote = "1"
+proc-macro2 = "1"
 
 [package]
 name = "reify-reflect"
-version = "0.1.0"
+version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Unified reification and reflection ecosystem for Rust"
+keywords = ["reflection", "reify", "type-level", "const-generics", "metaprogramming"]
+categories = ["rust-patterns", "data-structures"]
+readme = "README.md"
 
 [dependencies]
-reify-reflect-core = { path = "reify-reflect-core" }
-reflect-nat = { path = "reflect-nat" }
-reflect-derive = { path = "reflect-derive" }
-reify-graph = { path = "reify-graph" }
-context-trait = { path = "context-trait" }
-async-reify = { path = "async-reify" }
-const-reify = { path = "const-reify", optional = true }
+reify-reflect-core = { workspace = true }
+reflect-nat = { workspace = true }
+reflect-derive = { workspace = true }
+reify-graph = { workspace = true }
+context-trait = { workspace = true }
+async-reify = { workspace = true }
+const-reify = { workspace = true, optional = true }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros", "time"] }
 tokio-test = "0.4"
-serde = { version = "1", features = ["derive"] }
+serde = { workspace = true }
 serde_json = "1"
 criterion = { version = "0.5", features = ["html_reports"] }
-const-reify = { path = "const-reify" }
-const-reify-derive = { path = "const-reify-derive" }
+const-reify = { workspace = true }
+const-reify-derive = { workspace = true }
 
 [[bench]]
 name = "benchmarks"

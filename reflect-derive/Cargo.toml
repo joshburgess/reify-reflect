@@ -1,19 +1,24 @@
 [package]
 name = "reflect-derive"
-version = "0.1.0"
+version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Derive macro for #[derive(Reflect)]"
+keywords = ["proc-macro", "derive", "reflection", "reify"]
+categories = ["development-tools::procedural-macro-helpers", "rust-patterns"]
 
 [lib]
 proc-macro = true
 
 [dependencies]
-syn = { version = "2", features = ["full"] }
-quote = "1"
-proc-macro2 = "1"
+syn = { workspace = true, features = ["full"] }
+quote = { workspace = true }
+proc-macro2 = { workspace = true }
 
 [dev-dependencies]
-reify-reflect-core = { path = "../reify-reflect-core" }
-reflect-nat = { path = "../reflect-nat" }
+reify-reflect-core = { workspace = true }
+reflect-nat = { workspace = true }
