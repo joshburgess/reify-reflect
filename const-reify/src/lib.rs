@@ -8,7 +8,7 @@
 //! monomorphization of a const-generic type, enabling type-level programming
 //! with runtime-determined values.
 //!
-//! See [`DESIGN.md`](https://github.com/joshburgess/reflect-rs/blob/main/const-reify/DESIGN.md)
+//! See [`DESIGN.md`](https://github.com/joshburgess/reify-reflect/blob/main/const-reify/DESIGN.md)
 //! for the design rationale and safety analysis.
 //!
 //! # Examples

@@ -1,18 +1,23 @@
 [package]
 name = "const-reify-derive"
-version = "0.1.0"
+version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Proc macro: #[reifiable] for automatic const-generic dispatch"
+keywords = ["proc-macro", "const-generics", "reify", "dispatch"]
+categories = ["development-tools::procedural-macro-helpers", "rust-patterns"]
 
 [lib]
 proc-macro = true
 
 [dependencies]
-syn = { version = "2", features = ["full", "extra-traits"] }
-quote = "1"
-proc-macro2 = "1"
+syn = { workspace = true, features = ["full", "extra-traits"] }
+quote = { workspace = true }
+proc-macro2 = { workspace = true }
 
 [dev-dependencies]
-const-reify = { path = "../const-reify" }
+const-reify = { workspace = true }
