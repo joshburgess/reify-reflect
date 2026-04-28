@@ -1,6 +1,24 @@
 # Phase 1: Foundations (Unified Reify/Reflect Trait Family)
 
-## Design Decisions
+## What this phase covers
+
+The trait vocabulary that everything else in the workspace builds on:
+
+- The `Reflect` trait, which says "this type carries a compile-time value, and here is how to extract it at runtime."
+- The `RuntimeValue` enum, a small structural type that's the standard payload for `Reflect` impls.
+- The `reify` function and `Reified<'brand, T>` token, which together let you take any runtime value and use it inside a callback as a scoped, type-level fact.
+- A first batch of `Reflect` instances on Peano naturals, type-level booleans, and HLists (`reflect-nat`).
+- `#[derive(Reflect)]`, which generates `Reflect` impls for ordinary structs and enums (`reflect-derive`).
+
+If you're new to the project, [Guide 1: Reflect basics](guides/01-reflect-basics.md) and [Guide 2: branded reify](guides/02-branded-reify.md) walk through the same material at tutorial pace.
+
+## Crates introduced
+
+- [`reify-reflect-core`](https://docs.rs/reify-reflect-core)
+- [`reflect-nat`](https://docs.rs/reflect-nat)
+- [`reflect-derive`](https://docs.rs/reflect-derive)
+
+## Design decisions
 
 ### Reflect trait returns associated `Value` type
 
@@ -33,3 +51,8 @@ Field names in `#[derive(Reflect)]` are encoded as
 `RuntimeValue::String` variant. This keeps `RuntimeValue` minimal and
 demonstrates that strings can be represented within the existing type-level
 vocabulary.
+
+## Next
+
+- [Phase 2: Graph reification](phase2-graph-reification.md)
+- [Documentation index](README.md)

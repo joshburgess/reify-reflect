@@ -1,6 +1,18 @@
 # Phase 3: Local Trait Contexts
 
-## Design Decisions
+## What this phase covers
+
+A way to swap a type's `Ord`, `Hash`, or `Display` implementation for one block of code, without writing a newtype.
+
+The orthodox Rust answer to "I need a different `Ord` for this `Vec<i32>` just for this one sort" is to wrap the value in a newtype with a custom impl. That works, but it's heavyweight: a new struct, manual trait impls, and you lose the existing impls on the inner type.
+
+This phase introduces `WithContext<T, Ctx>`, a thin wrapper that pairs a value with a *context*: a small `Copy` struct of function pointers that supplies the trait implementation. Three built-in contexts (`OrdContext`, `HashContext`, `DisplayContext`) cover the common cases. For arbitrary user traits, `impl_context_trait!` generates new context types.
+
+## Crate introduced
+
+- [`context-trait`](https://docs.rs/context-trait)
+
+## Design decisions
 
 ### Function pointer tables, not closures
 
@@ -31,3 +43,8 @@ slice reference, which sometimes requires the user to annotate the closure
 parameter type. This is a Rust type inference limitation with closures
 passed through macros. We chose clarity over magic: the type annotation
 makes the API self-documenting.
+
+## Next
+
+- [Phase 4: Async computation inspector](phase4-async-reify.md)
+- [Documentation index](README.md)

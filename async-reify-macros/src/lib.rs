@@ -1,10 +1,29 @@
-//! # async-reify-macros
+//! Attribute proc macros for [`async-reify`](https://docs.rs/async-reify).
 //!
-//! Attribute proc macros for [`async_reify`](https://docs.rs/async-reify).
+//! Currently provides [`macro@trace_async`], an attribute that rewrites
+//! every `.await` point in an `async fn` body to record into a shared
+//! `async_reify::Trace` without you having to wrap each await in
+//! `LabeledFuture` by hand.
 //!
-//! Currently provides [`macro@trace_async`], which rewrites every `.await`
-//! point in an async function body to record into a shared
-//! `async_reify::Trace`.
+//! You normally do not depend on this crate directly. Enable the `macros`
+//! feature on `async-reify` and the attribute is re-exported as
+//! [`async_reify::trace_async`](https://docs.rs/async-reify/latest/async_reify/attr.trace_async.html).
+//!
+//! # What the macro does
+//!
+//! `#[trace_async(trace = my_trace)]` on a function rewrites every
+//! `.await` inside the body so it is wrapped in a
+//! [`LabeledFuture`](https://docs.rs/async-reify/latest/async_reify/struct.LabeledFuture.html)
+//! that records into the trace handle named by the `trace = IDENT`
+//! argument. Labels are auto-generated as `"<expr> @ <file>:<line>"`, so
+//! every step in the resulting trace points back to the source line that
+//! produced it.
+//!
+//! See the [`async-reify` crate docs](https://docs.rs/async-reify) for
+//! the recording, inspection, and rendering pipeline this feeds into,
+//! and [`docs/phase4-async-reify.md`][phase4] for the design rationale.
+//!
+//! [phase4]: https://github.com/joshburgess/reify-reflect/blob/main/docs/phase4-async-reify.md
 
 #![deny(unsafe_code)]
 

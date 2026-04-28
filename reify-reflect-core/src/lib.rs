@@ -1,30 +1,45 @@
 #![deny(unsafe_code)]
 
-//! # reflect-core
+//! Core traits and types for type-level reification and reflection in Rust.
 //!
-//! Core trait definitions for type-level reification and reflection.
+//! This is the foundation crate. It defines:
 //!
-//! This crate provides the foundational [`Reflect`] trait, the [`reify`]
-//! function, and the [`RuntimeValue`] enum.
+//! - [`Reflect`]: a trait for types that carry a compile-time value, with
+//!   [`reflect()`](Reflect::reflect) extracting that value at runtime.
+//! - [`reify`]: a function that takes any runtime value and lifts it into
+//!   a scoped type-level context, where it is available through a
+//!   [`Reified`] token branded with an invariant lifetime that cannot
+//!   escape the callback.
+//! - [`RuntimeValue`]: a small, structural enum used as the standard
+//!   payload type for [`Reflect`] implementations across the workspace.
 //!
-//! ## The Reification/Reflection Pattern
+//! Everything is fully safe (`#![deny(unsafe_code)]`), with scoping
+//! enforced by the borrow checker.
 //!
-//! This implements the pattern from Kiselyov & Shan's "Functional Pearl:
-//! Implicit Configurations" (popularized by Kmett's Haskell `reflection`
-//! library), adapted to Rust with branded lifetimes for scoping safety.
+//! # When should I use this crate?
 //!
-//! - [`Reflect`]: Type-level value → runtime value. A type that encodes
-//!   a value at the type level can produce it at runtime.
+//! - You're writing a library where types encode values (Peano numbers,
+//!   type-level flags, dimensional units, etc.) and want a uniform way to
+//!   surface those values at runtime: implement [`Reflect`] for them.
+//! - You want a Haskell-`reflection`-style scoping primitive in Rust: use
+//!   [`reify`] to thread a runtime value into a callback as if it were a
+//!   compile-time fact.
+//! - You're writing a downstream crate (such as
+//!   [`reflect-nat`](https://docs.rs/reflect-nat) or
+//!   [`reflect-derive`](https://docs.rs/reflect-derive)) that produces
+//!   [`Reflect`] implementations: depend on this crate for the trait and
+//!   the [`RuntimeValue`] vocabulary.
 //!
-//! - [`reify`]: Runtime value → scoped type-level context. Takes a runtime
-//!   value and passes it to a continuation as a branded [`Reified`] token.
-//!   The branded lifetime prevents the token from escaping the callback.
+//! # The reification / reflection pattern
 //!
-//! ### Haskell comparison
+//! This implements the pattern from Kiselyov & Shan's *Functional Pearl:
+//! Implicit Configurations*, popularized by Kmett's Haskell `reflection`
+//! library, adapted to Rust with branded lifetimes for scoping safety.
 //!
 //! In Haskell:
+//!
 //! ```haskell
-//! reify :: a -> (forall s. Reifies s a => Proxy s -> r) -> r
+//! reify   :: a -> (forall s. Reifies s a => Proxy s -> r) -> r
 //! reflect :: Reifies s a => proxy s -> a
 //! ```
 //!
@@ -34,22 +49,46 @@
 //! prevents `s` from escaping.
 //!
 //! Unlike Haskell's `reflection` library (which uses `unsafeCoerce` to
-//! fabricate typeclass dictionaries from GHC internals), this implementation
-//! is safe all the way down: no unsafe code, no compiler-internal
-//! assumptions, scoping enforced mechanically by the borrow checker.
+//! fabricate typeclass dictionaries from GHC internals), this
+//! implementation is safe all the way down: no unsafe code, no
+//! compiler-internal assumptions. Scoping is enforced mechanically by
+//! the borrow checker.
 //!
 //! # Examples
+//!
+//! Lift a runtime value into a scoped type-level context:
 //!
 //! ```
 //! use reify_reflect_core::reify;
 //!
-//! // Lift a runtime value into a scoped type-level context
 //! let result = reify(&42i32, |token| {
 //!     let val: &i32 = token.reflect();
 //!     *val + 1
 //! });
 //! assert_eq!(result, 43);
 //! ```
+//!
+//! Implement [`Reflect`] for a type that carries a compile-time value:
+//!
+//! ```
+//! use reify_reflect_core::{Reflect, RuntimeValue};
+//!
+//! struct Pi;
+//!
+//! impl Reflect for Pi {
+//!     type Value = RuntimeValue;
+//!     fn reflect() -> Self::Value {
+//!         RuntimeValue::Nat(3)  // close enough
+//!     }
+//! }
+//!
+//! assert_eq!(Pi::reflect(), RuntimeValue::Nat(3));
+//! ```
+//!
+//! See also: [`reflect-nat`](https://docs.rs/reflect-nat) for ready-made
+//! [`Reflect`] implementations on Peano naturals, booleans, and HLists,
+//! and [`reflect-derive`](https://docs.rs/reflect-derive) for
+//! `#[derive(Reflect)]` on user types.
 
 use std::marker::PhantomData;
 

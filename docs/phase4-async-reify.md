@@ -1,6 +1,19 @@
 # Phase 4: Async Computation Inspector
 
-## Design Decisions
+## What this phase covers
+
+Tooling to extract the *shape* of an `async fn` execution as data: which await points were polled, in what order, how many times, and whether each returned `Ready` or `Pending`.
+
+`async fn` in Rust compiles down to a state machine, and most of the time you don't have to think about that. But when something hangs, stalls, or is mysteriously slow, you really want to see the structure of what is happening. This phase wraps futures so that polling them records a stream of `PollEvent`s into a shared `Trace`, then reifies that trace into an `AsyncStepGraph` you can serialize, inspect, or render as Graphviz DOT.
+
+The `#[trace_async]` proc macro automates the per-await wrapping: every `.await` in the function body becomes a `LabeledFuture`, with labels of the form `"<expr> @ file.rs:42"` so each step in the graph points back to the source line that produced it.
+
+## Crates introduced
+
+- [`async-reify`](https://docs.rs/async-reify) (with [`trace_workflow` example](../async-reify/examples/trace_workflow.rs))
+- [`async-reify-macros`](https://docs.rs/async-reify-macros) (the `#[trace_async]` proc macro)
+
+## Design decisions
 
 ### Arc<Mutex<Vec<PollEvent>>> for shared logging
 
@@ -35,3 +48,8 @@ The `to_dot()` function provides immediate visualization value. Full
 deterministic replay would require a controlled executor (capturing waker
 scheduling, timer state, etc.) and is noted as a future milestone in the
 docs rather than a half-implemented feature.
+
+## Next
+
+- [Phase 5: Const-generic bridge](phase5-const-reify.md)
+- [Documentation index](README.md)

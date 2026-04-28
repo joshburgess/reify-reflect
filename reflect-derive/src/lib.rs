@@ -1,25 +1,62 @@
-//! # reflect-derive
+//! `#[derive(Reflect)]` for structs and enums.
 //!
-//! Proc macro crate providing `#[derive(Reflect)]`.
+//! This crate provides a single proc macro that generates a
+//! `reify_reflect_core::Reflect` implementation describing the
+//! *structural shape* of a type as a `RuntimeValue` tree.
 //!
-//! Generates a `reify_reflect_core::Reflect` implementation that emits a
-//! `reify_reflect_core::RuntimeValue` description of the type's structural
-//! shape:
+//! It pairs naturally with
+//! [`reflect-nat`](https://docs.rs/reflect-nat): use type-level naturals,
+//! booleans, or HLists as fields, and the derive will recursively reflect
+//! them into a single value-level description of the type.
 //!
-//! - **Named struct** → `RuntimeValue::List` of `(field_name_bytes, field_value)` pairs.
-//! - **Tuple struct** → `RuntimeValue::List` of positional field values.
-//! - **Unit struct** (`struct X;`) → `RuntimeValue::Unit`.
-//! - **Empty named struct** (`struct X {}`) → `RuntimeValue::List(vec![])`.
-//! - **Enum** → `RuntimeValue::List` of variant entries, each `(variant_name_bytes, variant_payload)`,
-//!   where the payload mirrors the per-variant shape (unit / tuple / named).
-//!
-//! Fields whose types implement `Reflect<Value = RuntimeValue>` are
-//! reflected; fields annotated with `#[reflect(skip)]` are omitted.
-//!
-//! Note: enum derivation reflects the *type schema*, not a runtime
+//! Note that this reflects the *type schema*, not a particular runtime
 //! instance. The generated `reflect()` is a static method (matching the
-//! `reify_reflect_core::Reflect` trait), so it walks every variant and every
-//! variant's field types.
+//! `reify_reflect_core::Reflect` trait), so it walks every variant and
+//! every variant's field types.
+//!
+//! # Encoding
+//!
+//! The generated `reflect()` returns:
+//!
+//! - **Named struct** => `RuntimeValue::List` of
+//!   `(field_name_bytes, field_value)` pairs.
+//! - **Tuple struct** => `RuntimeValue::List` of positional field values.
+//! - **Unit struct** (`struct X;`) => `RuntimeValue::Unit`.
+//! - **Empty named struct** (`struct X {}`) => `RuntimeValue::List(vec![])`.
+//! - **Enum** => `RuntimeValue::List` of variant entries, each
+//!   `(variant_name_bytes, variant_payload)`, where the payload mirrors
+//!   the per-variant shape (unit / tuple / named).
+//!
+//! Field names are encoded as a `RuntimeValue::List` of byte values to
+//! keep `RuntimeValue` minimal, rather than introducing a new string
+//! variant. See [`docs/phase1-foundations.md`][phase1] for the rationale.
+//!
+//! [phase1]: https://github.com/joshburgess/reify-reflect/blob/main/docs/phase1-foundations.md
+//!
+//! # Field attributes
+//!
+//! - `#[reflect(skip)]` omits a field from the generated output. Fields
+//!   whose types do not implement `Reflect<Value = RuntimeValue>` must be
+//!   skipped (or the type changed) for the derive to compile.
+//!
+//! # Examples
+//!
+//! ```ignore
+//! use reflect_derive::Reflect;
+//! use reify_reflect_core::{Reflect, RuntimeValue};
+//! use reflect_nat::{S, Z};
+//!
+//! #[derive(Reflect)]
+//! struct Point {
+//!     #[reflect(skip)]
+//!     label: String,
+//!     x: S<S<Z>>,        // type-level 2
+//!     y: S<S<S<Z>>>,     // type-level 3
+//! }
+//!
+//! // Reflects to a List of (b"x", Nat(2)), (b"y", Nat(3)).
+//! let _shape: RuntimeValue = <Point as Reflect>::reflect();
+//! ```
 
 #![deny(unsafe_code)]
 
