@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.1] - 2026-04-28
+
+Documentation-only release. No API or behavior changes.
+
+- Rewrote the root `README.md` with plain-English framing of reification and reflection, a where-to-start decision table, a tour of all nine crates, and worked examples for each major capability.
+- Rewrote every crate's `lib.rs` `//!` module-level rustdoc so each docs.rs landing page opens with what the crate is, when to use it, a runnable example, and cross-links to siblings, design notes, and guides.
+- Added a `docs/README.md` index linking the blog post, all four guides, all six phase design notes, all three RFCs, and the runnable examples.
+- Added "what this phase covers" intros and inter-phase navigation links to every `docs/phase*.md`.
+
 ## [0.1.0] - 2026-04-26
 
 ### Phase 1: Foundations (unified Reify/Reflect trait family)
