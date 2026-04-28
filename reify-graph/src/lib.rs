@@ -1,21 +1,61 @@
 #![deny(unsafe_code)]
 
-//! # reify-graph
+//! Convert `Rc<RefCell<T>>` and `Arc<Mutex<T>>` pointer graphs into a flat,
+//! inspectable, serializable form, and back.
 //!
-//! Safe library to convert `Rc<RefCell<T>>`-based pointer graphs into
-//! node-indexed adjacency representations and back.
+//! Pointer-shaped data (trees with shared subtrees, DAGs, cyclic graphs)
+//! is awkward to serialize, log, or transform: walking it naively either
+//! duplicates shared nodes or loops forever on cycles. This crate gives
+//! you a small, non-invasive API to:
 //!
-//! This enables serialization, inspection, and transformation of cyclic
-//! and DAG-structured data that would otherwise be difficult to work with.
+//! - **Reify**: turn a pointer graph rooted at an `Rc<RefCell<T>>` (or
+//!   `Arc<Mutex<T>>`) into a flat [`ReifiedGraph`] of nodes and edges,
+//!   keyed by pointer identity, detecting cycles and preserving sharing.
+//! - **Reflect**: rebuild the original pointer graph from a [`ReifiedGraph`],
+//!   restoring the same sharing topology (one allocation per node id, even
+//!   when many edges point to it).
+//!
+//! With the default `serde` feature enabled, [`ReifiedGraph`] is
+//! `Serialize` + `Deserialize`, which gives you JSON / postcard / etc.
+//! serialization of arbitrary cyclic data essentially for free.
+//!
+//! # When to use it
+//!
+//! - You want to dump or log a graph for debugging (an AST with shared
+//!   sub-expressions, a circuit netlist, a scene graph).
+//! - You want to send pointer-shaped state across a process boundary.
+//! - You want to apply a structural transform (renumbering, GC, deduping)
+//!   that's awkward on the live `Rc` graph but easy on a flat node+edge
+//!   form.
+//!
+//! # Design choices
+//!
+//! - Node identity comes from [`Rc::as_ptr`] (or `Arc::as_ptr`) cast to
+//!   `usize`. No traits or wrappers required on your `T`.
+//! - Children are extracted by a closure you supply, so the library never
+//!   guesses at the structure of your type.
+//! - Node data is cloned into the [`ReifiedGraph`] (use `Arc<Inner>` inside
+//!   `T` if cloning is expensive).
+//! - Reconstruction in [`reflect_graph`] preserves sharing exactly: each
+//!   [`NodeId`] becomes one [`Rc`] and is re-pointed everywhere it was
+//!   referenced.
+//!
+//! See the [`docs/phase2-graph-reification.md`][phase2] design note, and
+//! the [`serialize_graph` example][example] for an end-to-end `serde_json`
+//! round trip.
+//!
+//! [phase2]: https://github.com/joshburgess/reify-reflect/blob/main/docs/phase2-graph-reification.md
+//! [example]: https://github.com/joshburgess/reify-reflect/blob/main/reify-graph/examples/serialize_graph.rs
 //!
 //! # Examples
+//!
+//! Round-trip a small `Rc<RefCell<_>>` tree through the flat form:
 //!
 //! ```
 //! use reify_graph::{reify_graph, reflect_graph};
 //! use std::cell::RefCell;
 //! use std::rc::Rc;
 //!
-//! // A simple tree node
 //! #[derive(Clone, Debug)]
 //! struct Node {
 //!     value: i32,
@@ -28,17 +68,19 @@
 //!     children: vec![leaf.clone()],
 //! }));
 //!
-//! // Reify the graph
+//! // Flatten: 2 nodes, 1 edge
 //! let graph = reify_graph(root.clone(), |n| n.children.clone());
 //! assert_eq!(graph.nodes.len(), 2);
 //! assert_eq!(graph.edges.len(), 1);
 //!
-//! // Reconstruct the graph
+//! // Rebuild, restoring the original sharing
 //! let reconstructed = reflect_graph(graph, |n, kids| n.children = kids);
 //! assert_eq!(reconstructed.borrow().value, 0);
-//! assert_eq!(reconstructed.borrow().children.len(), 1);
 //! assert_eq!(reconstructed.borrow().children[0].borrow().value, 1);
 //! ```
+//!
+//! For `Arc<Mutex<T>>` graphs (the same pattern, thread-safe), see the
+//! [`arc`] module's `reify_graph_arc` and `reflect_graph_arc`.
 
 use std::cell::RefCell;
 use std::collections::HashMap;

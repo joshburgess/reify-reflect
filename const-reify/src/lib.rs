@@ -1,17 +1,35 @@
 #![deny(unsafe_code)]
 
-//! # const-reify
+//! Use a runtime `u64` as a `const N: u64`, safely.
 //!
-//! Runtime-to-const-generic bridge via match-table dispatch.
+//! Const generics in Rust have to be known at compile time. That's
+//! frustrating when the value you actually want to parameterize on
+//! (a modulus, a buffer size, a feature flag) only becomes known at
+//! runtime. The orthodox workarounds are to drop the const generic
+//! (and lose the type safety), or to write a giant `match` by hand.
 //!
-//! Given a runtime `u64` value in `0..=255`, dispatches to the corresponding
-//! monomorphization of a const-generic type, enabling type-level programming
-//! with runtime-determined values.
+//! This crate is the giant `match`, generated for you, with three
+//! progressively more powerful APIs on top.
 //!
-//! See [`DESIGN.md`](https://github.com/joshburgess/reify-reflect/blob/main/const-reify/DESIGN.md)
-//! for the design rationale and safety analysis.
+//! Everything is `#![deny(unsafe_code)]`. There is no vtable
+//! fabrication, no `transmute`, no UB. The dispatch is a flat 256-arm
+//! `match` that the compiler optimizes well. The tradeoff: the runtime
+//! value must lie in `0..=255` per dispatch (and the trait this crate
+//! ships with is just one example; you can build your own with a wider
+//! range). For the full safety analysis and why we chose this over the
+//! original "fabricate a vtable" approach, see [`DESIGN.md`][design].
 //!
-//! # Examples
+//! [design]: https://github.com/joshburgess/reify-reflect/blob/main/const-reify/DESIGN.md
+//!
+//! # Three APIs, in order of power
+//!
+//! ## 1. [`reify_const`] / [`reify!`]
+//!
+//! Smallest surface area. You get a `&dyn HasModulus` whose
+//! [`modulus()`](HasModulus::modulus) returns your runtime value. The
+//! const generic is "real" inside the dispatch (each arm calls
+//! `Modular::<N>::new()`), but you can only see it through the
+//! [`HasModulus`] trait. Useful for testing the wiring.
 //!
 //! ```
 //! use const_reify::{reify_const, HasModulus};
@@ -20,15 +38,53 @@
 //! assert_eq!(result, 17);
 //! ```
 //!
-//! Using the [`reify!`] macro:
+//! ## 2. [`reify_nat_fn`] / [`reify_nat2_fn`]
+//!
+//! When you only need the runtime value as a plain `u64` inside the
+//! callback (no const generic gymnastics needed). The closure form is
+//! the easiest entry point and is enough for most ad-hoc uses.
 //!
 //! ```
-//! use const_reify::{reify, HasModulus};
+//! use const_reify::reify_nat_fn;
 //!
-//! reify!(42u64, |m: &dyn HasModulus| {
-//!     assert_eq!(m.modulus(), 42);
-//! });
+//! let squared = reify_nat_fn(12, |n| n * n);
+//! assert_eq!(squared, 144);
 //! ```
+//!
+//! ## 3. [`NatCallback`] / [`reify_nat`]
+//!
+//! The full power form. Implement [`NatCallback`] on a type, and inside
+//! [`call::<const N: u64>()`](NatCallback::call) the value `N` is a
+//! genuine const generic that you can use in `const N: u64` positions.
+//!
+//! ```
+//! use const_reify::nat_reify::{NatCallback, reify_nat};
+//!
+//! struct Square;
+//! impl NatCallback<u64> for Square {
+//!     fn call<const N: u64>(&self) -> u64 { N * N }
+//! }
+//!
+//! assert_eq!(reify_nat(7, &Square), 49);
+//! ```
+//!
+//! For traits with multiple const-generic methods, the
+//! [`#[reifiable]`](https://docs.rs/const-reify-derive) proc macro
+//! generates the `NatCallback` plumbing automatically. See
+//! [Guide 4][guide4].
+//!
+//! [guide4]: https://github.com/joshburgess/reify-reflect/blob/main/docs/guides/04-reifiable-macro.md
+//!
+//! # See also
+//!
+//! - [`docs/phase5-const-reify.md`][phase5] for the design rationale,
+//!   including why the range is 256 and why this is fully safe despite
+//!   the "vtable fabrication" reputation of the underlying technique.
+//! - The [narrative blog post][blog] for a worked example using modular
+//!   arithmetic.
+//!
+//! [phase5]: https://github.com/joshburgess/reify-reflect/blob/main/docs/phase5-const-reify.md
+//! [blog]: https://github.com/joshburgess/reify-reflect/blob/main/docs/blog-post.md
 
 mod dispatch;
 pub mod nat_reify;

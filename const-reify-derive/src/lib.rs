@@ -1,10 +1,59 @@
-//! # const-reify-derive
+//! `#[reifiable]`: turn a trait with const-generic methods into a runtime
+//! dispatch table.
 //!
-//! Proc macro providing `#[reifiable]` for automatic const-generic dispatch.
+//! [`const-reify`](https://docs.rs/const-reify) gives you a primitive way
+//! to lift a runtime `u64` into a `const N: u64`: implement
+//! [`NatCallback`](https://docs.rs/const-reify/latest/const_reify/trait.NatCallback.html)
+//! and call
+//! [`reify_nat`](https://docs.rs/const-reify/latest/const_reify/fn.reify_nat.html).
+//! That works, but it gets verbose if a single trait has several
+//! const-generic methods: you end up writing one `NatCallback` impl per
+//! method.
 //!
-//! Annotate a trait with `#[reifiable(range = 0..=255)]` and the macro
-//! generates match-table dispatch functions for each const-generic method,
-//! plus `NatCallback` wrapper structs for integration with `const_reify::reify_nat`.
+//! `#[reifiable(range = 0..=255)]` on the trait declaration eliminates
+//! that boilerplate. The macro:
+//!
+//! - Generates a `reify_<method_name>` dispatch function for each
+//!   const-generic method. The function takes a runtime `u64`, picks
+//!   the matching monomorphization, and forwards.
+//! - Generates the `NatCallback` wrapper structs that
+//!   [`reify_nat`](https://docs.rs/const-reify/latest/const_reify/fn.reify_nat.html)
+//!   needs internally.
+//! - Leaves non-const-generic methods alone.
+//!
+//! You then implement the trait normally, and call the generated
+//! `reify_*` dispatch functions from runtime code.
+//!
+//! See [Guide 4: the `#[reifiable]` macro][guide4] for a full worked
+//! example, and [`docs/rfcs/0003-reifiable-proc-macro.md`][rfc] for the
+//! design.
+//!
+//! [guide4]: https://github.com/joshburgess/reify-reflect/blob/main/docs/guides/04-reifiable-macro.md
+//! [rfc]: https://github.com/joshburgess/reify-reflect/blob/main/docs/rfcs/0003-reifiable-proc-macro.md
+//!
+//! # Example
+//!
+//! ```ignore
+//! use const_reify_derive::reifiable;
+//!
+//! #[reifiable(range = 0..=255)]
+//! trait ModArith {
+//!     fn pow_mod<const N: u64>(&self, base: u64, exp: u64) -> u64;
+//!     fn mul_mod<const N: u64>(&self, a: u64, b: u64) -> u64;
+//!     fn name(&self) -> &str;  // not const-generic, left alone
+//! }
+//!
+//! struct FastMod;
+//! impl ModArith for FastMod {
+//!     fn pow_mod<const N: u64>(&self, base: u64, exp: u64) -> u64 { /* ... */ 0 }
+//!     fn mul_mod<const N: u64>(&self, a: u64, b: u64) -> u64 { (a * b) % N }
+//!     fn name(&self) -> &str { "fast" }
+//! }
+//!
+//! // Now `reify_pow_mod` and `reify_mul_mod` are generated dispatchers:
+//! let modulus: u64 = 13;
+//! let result = reify_pow_mod(modulus, &FastMod, 2, 12);
+//! ```
 
 #![deny(unsafe_code)]
 
