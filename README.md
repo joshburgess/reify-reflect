@@ -47,7 +47,7 @@ let squared = reify_nat_fn(12, |n| n * n);
 assert_eq!(squared, 144);
 ```
 
-A longer, narrative tour lives in [`docs/blog-post.md`](docs/blog-post.md), and step-by-step guides are in [`docs/guides/`](docs/guides/).
+Step-by-step guides are in [`docs/guides/`](docs/guides/).
 
 ## Where to start
 
@@ -177,8 +177,6 @@ For traits with multiple const-generic methods, `#[reifiable(range = 0..=255)]` 
 
 - API docs: `cargo doc --features full --no-deps --open`
 - Step-by-step tutorials: [`docs/guides/`](docs/guides/)
-- Narrative overview: [`docs/blog-post.md`](docs/blog-post.md)
-- Per-phase design notes: [`docs/phase1-foundations.md`](docs/phase1-foundations.md) ... [`docs/phase6-integration.md`](docs/phase6-integration.md)
 - Forward-looking RFCs: [`docs/rfcs/`](docs/rfcs/)
 - End-to-end example: [`examples/roundtrip.rs`](examples/roundtrip.rs) (`cargo run --example roundtrip --features full`)
 

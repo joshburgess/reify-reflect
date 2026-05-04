@@ -77,14 +77,11 @@
 //!
 //! # See also
 //!
-//! - [`docs/phase5-const-reify.md`][phase5] for the design rationale,
-//!   including why the range is 256 and why this is fully safe despite
+//! - [Guide 3: const-reify][guide3] for a tutorial-paced walkthrough
+//!   covering why the range is 256 and why this is fully safe despite
 //!   the "vtable fabrication" reputation of the underlying technique.
-//! - The [narrative blog post][blog] for a worked example using modular
-//!   arithmetic.
 //!
-//! [phase5]: https://github.com/joshburgess/reify-reflect/blob/main/docs/phase5-const-reify.md
-//! [blog]: https://github.com/joshburgess/reify-reflect/blob/main/docs/blog-post.md
+//! [guide3]: https://github.com/joshburgess/reify-reflect/blob/main/docs/guides/03-const-reify.md
 
 mod dispatch;
 pub mod nat_reify;

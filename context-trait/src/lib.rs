@@ -39,11 +39,6 @@
 //! means the comparator must be stateless. If you need captured state,
 //! reach for a newtype.
 //!
-//! See [`docs/phase3-context-trait.md`][phase3] for the full design
-//! rationale.
-//!
-//! [phase3]: https://github.com/joshburgess/reify-reflect/blob/main/docs/phase3-context-trait.md
-//!
 //! # Examples
 //!
 //! Sort a slice descending without a newtype:

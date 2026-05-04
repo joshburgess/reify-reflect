@@ -53,11 +53,9 @@
 //! assert_eq!(Three::reflect(), RuntimeValue::Nat(3));
 //! ```
 //!
-//! For deeper walkthroughs, see the [guides] and the [narrative blog post]
-//! in the source tree.
+//! For deeper walkthroughs, see the [guides] in the source tree.
 //!
 //! [guides]: https://github.com/joshburgess/reify-reflect/tree/main/docs/guides
-//! [narrative blog post]: https://github.com/joshburgess/reify-reflect/blob/main/docs/blog-post.md
 //!
 //! # Feature flags
 //!

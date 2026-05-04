@@ -1,8 +1,31 @@
 # Design: `#[reifiable]` Proc Macro for Automatic Const-Generic Dispatch
 
-- **Status**: Design / Feasibility Analysis
-- **Context**: reify-reflect reification, implementable today
-- **Related**: RFC 0001, RFC 0002 (this is the "do it now" version)
+- **Status**: Implemented (V1 ships in 0.1.0; V2 items are still future work).
+- **Crate**: [`const-reify-derive`](https://docs.rs/const-reify-derive)
+- **Related**: RFC 0001, RFC 0002
+
+> **Already built.** This document was the original design sketch for
+> `#[reifiable]`. The macro now ships as the
+> [`const-reify-derive`](https://docs.rs/const-reify-derive) crate, and the
+> rest of this RFC is preserved as design rationale rather than as a
+> proposal.
+>
+> If you want to *use* the macro, start here:
+>
+> - **Tutorial:** [Guide 4: the `#[reifiable]` macro](../guides/04-reifiable-macro.md)
+> - **Crate docs:** [docs.rs/const-reify-derive](https://docs.rs/const-reify-derive)
+>
+> If you want to *read* or *extend* the implementation:
+>
+> - **Source:** [`const-reify-derive/src/lib.rs`](../../const-reify-derive/src/lib.rs)
+> - **Tests:** [`const-reify-derive/tests/reifiable_tests.rs`](../../const-reify-derive/tests/reifiable_tests.rs)
+>
+> What shipped matches the [V1 scope](#v1-scope) below: a single
+> `const N: u64` parameter per method, configurable range, `&self` /
+> `&mut self`, lifetime and type generic propagation, and an error on
+> return types that depend on `N`. The [V2 scope](#v2-scope) items
+> (multiple const parameters, async methods, return-type erasure,
+> `outline` mode) remain open.
 
 ## Summary
 
@@ -377,6 +400,12 @@ monomorphizations are `R₁ × R₂ × ... × Rₖ`.
 
 ### V1 scope
 
+**Status: shipped in `const-reify-derive` 0.1.** See
+[`const-reify-derive/src/lib.rs`](../../const-reify-derive/src/lib.rs) for
+the implementation and
+[`const-reify-derive/tests/reifiable_tests.rs`](../../const-reify-derive/tests/reifiable_tests.rs)
+for the test coverage of every bullet below.
+
 - Single `const N: PrimitiveType` parameter per method
 - Configurable range via attribute
 - Generates dispatch functions and `NatCallback` wrappers
@@ -387,6 +416,8 @@ monomorphizations are `R₁ × R₂ × ... × Rₖ`.
 
 ### V2 scope
 
+**Status: not yet implemented.**
+
 - Multiple const parameters with per-parameter ranges
 - Async method support
 - User-annotated return type erasure for N-dependent returns
@@ -394,11 +425,17 @@ monomorphizations are `R₁ × R₂ × ... × Rₖ`.
 
 ### Crate placement
 
-New crate: `const-reify-derive` (proc-macro crate), added to the workspace.
-Depends on `syn`, `quote`, `proc-macro2`. Optionally generates code that
-references `const-reify::NatCallback` for the callback wrapper.
+Shipped as the [`const-reify-derive`](https://docs.rs/const-reify-derive)
+crate in the workspace. It depends on `syn`, `quote`, and `proc-macro2`,
+and generates code that references `const-reify::NatCallback` for the
+callback wrapper.
 
 ## Prototype
+
+The notes below are kept for historical context; the actual implementation
+lives in
+[`const-reify-derive/src/lib.rs`](../../const-reify-derive/src/lib.rs) and
+uses `syn` directly rather than this declarative-macro sketch.
 
 A working prototype of the core dispatch generation (without the full proc
 macro attribute parsing) can be demonstrated with a declarative macro:

@@ -20,10 +20,7 @@
 //! produced it.
 //!
 //! See the [`async-reify` crate docs](https://docs.rs/async-reify) for
-//! the recording, inspection, and rendering pipeline this feeds into,
-//! and [`docs/phase4-async-reify.md`][phase4] for the design rationale.
-//!
-//! [phase4]: https://github.com/joshburgess/reify-reflect/blob/main/docs/phase4-async-reify.md
+//! the recording, inspection, and rendering pipeline this feeds into.
 
 #![deny(unsafe_code)]
 

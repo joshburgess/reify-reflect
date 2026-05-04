@@ -40,11 +40,9 @@
 //!   [`NodeId`] becomes one [`Rc`] and is re-pointed everywhere it was
 //!   referenced.
 //!
-//! See the [`docs/phase2-graph-reification.md`][phase2] design note, and
-//! the [`serialize_graph` example][example] for an end-to-end `serde_json`
-//! round trip.
+//! See the [`serialize_graph` example][example] for an end-to-end
+//! `serde_json` round trip.
 //!
-//! [phase2]: https://github.com/joshburgess/reify-reflect/blob/main/docs/phase2-graph-reification.md
 //! [example]: https://github.com/joshburgess/reify-reflect/blob/main/reify-graph/examples/serialize_graph.rs
 //!
 //! # Examples

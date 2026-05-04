@@ -40,13 +40,9 @@
 //!    [`reify_execution`].
 //! 4. Inspect, serialize, or render. [`to_dot`] outputs Graphviz DOT.
 //!
-//! See the [`trace_workflow` example][example] for an end-to-end run, and
-//! [`docs/phase4-async-reify.md`][phase4] for the design choices (why
-//! `Arc<Mutex<...>>` for shared logging, why label-based step grouping,
-//! why DOT rather than full deterministic replay).
+//! See the [`trace_workflow` example][example] for an end-to-end run.
 //!
 //! [example]: https://github.com/joshburgess/reify-reflect/blob/main/async-reify/examples/trace_workflow.rs
-//! [phase4]: https://github.com/joshburgess/reify-reflect/blob/main/docs/phase4-async-reify.md
 //!
 //! # Examples
 //!

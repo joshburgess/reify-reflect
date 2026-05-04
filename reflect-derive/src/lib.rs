@@ -29,9 +29,7 @@
 //!
 //! Field names are encoded as a `RuntimeValue::List` of byte values to
 //! keep `RuntimeValue` minimal, rather than introducing a new string
-//! variant. See [`docs/phase1-foundations.md`][phase1] for the rationale.
-//!
-//! [phase1]: https://github.com/joshburgess/reify-reflect/blob/main/docs/phase1-foundations.md
+//! variant.
 //!
 //! # Field attributes
 //!
