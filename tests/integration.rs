@@ -4,7 +4,7 @@
 use reify_reflect::core::{Reflect, RuntimeValue};
 use reify_reflect::nat::{False, HCons, HNil, True, N3, N5, S, Z};
 
-// --- Phase 1: Derive + type-level naturals ---
+// --- Derive + type-level naturals ---
 
 #[derive(reflect_derive::Reflect)]
 struct Point {
@@ -80,7 +80,7 @@ fn type_level_booleans_reflect() {
     assert!(!False::reflect());
 }
 
-// --- Phase 2: Graph reification via JSON round-trip ---
+// --- Graph reification via JSON round-trip ---
 
 #[cfg(feature = "serde")]
 mod graph_serde {
@@ -125,7 +125,7 @@ mod graph_serde {
     }
 }
 
-// --- Phase 3: BTreeSet with custom Ord via with_ord! ---
+// --- BTreeSet with custom Ord via with_ord! ---
 
 mod context_ord {
     use reify_reflect::context::{with_ord, OrdContext, WithContext};
@@ -188,7 +188,7 @@ mod context_ord {
     }
 }
 
-// --- Phase 4: Async tracing ---
+// --- Async tracing ---
 
 mod async_trace {
     use reify_reflect::async_trace::{labeled_await, reify_execution, to_dot, Trace};
@@ -252,7 +252,7 @@ mod async_trace {
     }
 }
 
-// --- Phase 5: Const-reify ---
+// --- Const-reify ---
 
 #[cfg(feature = "const-reify")]
 mod const_bridge {

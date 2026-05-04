@@ -4,9 +4,8 @@
 //! stable Rust. It is NOT used for any production functionality: the
 //! actual dispatch in const-reify uses a safe match table.
 //!
-//! This exists purely to satisfy Phase 5.2 of the build plan (documenting
-//! vtable layout assumptions) and to demonstrate why vtable fabrication
-//! is fragile and should be avoided.
+//! It exists to demonstrate why vtable fabrication is fragile and should
+//! be avoided.
 
 use const_reify::{HasModulus, Modular};
 

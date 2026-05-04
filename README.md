@@ -80,7 +80,7 @@ reify-reflect                facade: re-exports everything below
 └── const-reify-derive       #[reifiable] proc macro for trait dispatch tables
 ```
 
-Every crate has its own [docs.rs](https://docs.rs) page with a runnable example at the top. The phase design notes in [`docs/`](docs/) explain *why* each crate is shaped the way it is.
+Every crate has its own [docs.rs](https://docs.rs) page with a runnable example at the top. The [guides](docs/guides/) walk through the same material at tutorial pace.
 
 ## A few more flavors
 
@@ -202,7 +202,7 @@ The Rust version trades unbounded range for monomorphized performance and a full
 
 ## Status
 
-Version 0.1.0 covers the six phases listed in [`CHANGELOG.md`](CHANGELOG.md). The API is consistent and tested, but this is still an early release. Expect breaking changes before 1.0, and please file issues if anything in the docs is unclear or wrong.
+See [`CHANGELOG.md`](CHANGELOG.md) for what shipped in 0.1.0 and 0.1.1. The API is consistent and tested, but this is still an early release. Expect breaking changes before 1.0, and please file issues if anything in the docs is unclear or wrong.
 
 ## License
 
